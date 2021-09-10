@@ -17,4 +17,4 @@ It will take A LOT of time to get something usable, and even more time to have a
 
 ## Inspirations
 
-Digital-Logic-Sim from Sebastian Lague (https://github.com/SebLague/Digital-Logic-Sim)
+Digital-Logic-Sim from Sebastian Lague (<https://github.com/SebLague/Digital-Logic-Sim>)
