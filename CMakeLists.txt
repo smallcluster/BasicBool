@@ -30,6 +30,11 @@ set_target_properties(
 
 # --- DEPS ---
 
+# OpenGL
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
+
 # glad
 add_library(glad STATIC 
     external/glad/src/glad.c
