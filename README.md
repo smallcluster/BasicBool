@@ -6,7 +6,7 @@ THIS IS A TOY PROJECT to help me learn C++, CMake, OS abstraction, GUI architect
 It will take A LOT of time to get something usable, and even more time to have a clean architecture/coding standard.
 
 ## Project Goals
-- no external libraries (What’s the best way to learn than reinvent the wheel?)
+- no external libraries apart from GLAD for OpenGL extension loading (What’s the best way to learn than reinventing the wheel?)
 - modern OpenGL
 - cross platform
 - simple immediate mode GUI
