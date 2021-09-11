@@ -27,14 +27,18 @@ struct Win32State
     HDC hDC = nullptr; // Device context
     HGLRC glrc = nullptr; // OpenGl context
     bool shouldClose = false;
+    int width, height;
 };
 
 static Win32State win32State;
 
-void Platform::fatalError(const string &message)
+int Platform::getWidth()
 {
-    MessageBoxA(0, message.c_str(), "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
-    abort(); // TODO : Change this to allow ressource freeing before exit.
+    return win32State.width;
+}
+int Platform::getHeight()
+{
+    return win32State.height;
 }
 
 LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam)
@@ -56,11 +60,18 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
     {
         RECT newRect;
         GetClientRect(hwnd, &newRect);
-        int width = newRect.right - newRect.left;
-        int height = newRect.bottom - newRect.top;
-        glViewport(0, 0, width, height);
-    }
-    break;
+        win32State.width = newRect.right - newRect.left;
+        win32State.height = newRect.bottom - newRect.top;
+    }break;
+
+    case WM_SIZING:
+    {
+        // TODO : remove that
+        RECT newRect;
+        GetClientRect(hwnd, &newRect);
+        win32State.width = newRect.right - newRect.left;
+        win32State.height = newRect.bottom - newRect.top;
+    }break;
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
@@ -109,15 +120,16 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
 
 Platform::Platform(const string &name, int width, int height)
 {
-
     LOGDEBUG("Initializing platform...");
-
     // Can't initialize the system twice !
     if (win32State.handle != nullptr || win32State.hInstance != nullptr)
     {
         LOGWARN("Platform already initialized. Skipping initialization.");
         return;
     }
+
+    win32State.width = width;
+    win32State.height = height;
 
     // Get the application handle associated with the current process
     win32State.hInstance = GetModuleHandleA(0);
@@ -137,8 +149,8 @@ Platform::Platform(const string &name, int width, int height)
     // Register window
     if (!RegisterClassA(&wc))
     {
+        MessageBoxA(0, "Window registration failed !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Window registration failed !");
-        fatalError("Window registration failed !");
         return;
     }
 
@@ -165,8 +177,8 @@ Platform::Platform(const string &name, int width, int height)
 
     if (win32State.handle == 0)
     {
+        MessageBoxA(0, "Window creation failed !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Window creation failed !");
-        fatalError("Window creation failed !");
         return;
     }
 
@@ -184,14 +196,14 @@ Platform::Platform(const string &name, int width, int height)
     int nPixelFormat = ChoosePixelFormat(win32State.hDC, &pfd);
     if(nPixelFormat == 0)
     {
+        MessageBoxA(0, "Failed to choose pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to choose pixel format.");
-        Platform::fatalError("Failed to choose pixel format.");
         return;
     }
     if(!SetPixelFormat(win32State.hDC, nPixelFormat, &pfd))
     {
+        MessageBoxA(0, "Failed to set pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to set pixel format.");
-        Platform::fatalError("Failed to set pixel format.");
         return;
     }
 
@@ -220,8 +232,8 @@ Platform::Platform(const string &name, int width, int height)
         PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
         wglSwapIntervalEXT(0); // VSYNC not locked to 60 fps
     } else {
+        MessageBoxA(0, "Can't create OpenGL 3 context !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Can't create OpenGL 3 context !");
-        Platform::fatalError("Can't create OpenGL 3 context !");
         return;
     }
 

@@ -21,10 +21,11 @@ public:
     }
     static Platform &getInstance()
     {
-        return getInstance("APP", 1280, 720);
+        return getInstance("APP", 640, 480);
     }
 
     bool processEvents();
     void swapBuffers();
-    static void fatalError(const string &message);
+    int getWidth();
+    int getHeight();
 };

@@ -6,6 +6,7 @@
 
 int main(int argc, char const *argv[])
 {
+
     Platform& platform = Platform::getInstance("BasicBool", 640, 480);
 
     float vertices[] = {
@@ -73,10 +74,14 @@ int main(int argc, char const *argv[])
 
     while (platform.processEvents())
     {
+        glViewport(0, 0, platform.getWidth(), platform.getHeight());
+        
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindVertexArray(vao);
         glUseProgram(programShader);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
 
         platform.swapBuffers();
     }

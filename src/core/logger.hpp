@@ -156,17 +156,20 @@ public:
         {
             std::stringstream listArgs;
             argsToStringStream(listArgs, args...);
-            
+
             // Formating error !
-            std::string text = "**Logger args number Error**\nMSG = "+ss.str()+message+"\nARGS : "+listArgs.str()+'\n';
+            std::string text = "**Logger args number Error**\nMSG = " + ss.str() + message + "\nARGS : " + listArgs.str() + '\n';
             std::cout << text;
-        
-            return; // Skip the fancy logging.
+        }
+        else
+        {
+            // Format and show the message.
+            format(ss, chunks, 0, args...);
+            std::cout << ss.str() << std::endl;
         }
 
-        // Format and show the message.
-        format(ss, chunks, 0, args...);
-        std::cout << ss.str() << std::endl;
+        if (level == LOG_FATAL)
+            abort();
     }
 };
 
