@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "defines.hpp"
+#include "core/defines.hpp"
 
 class Platform
 { 

@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.0)
 
 project(BasicBool)
 
-
 add_executable(
     ${PROJECT_NAME}
     #WIN32
     src/main.cpp
-    src/defines.hpp
-
+    
     # PLATFORM
     src/platform/platform.hpp
     src/platform/platform_win32.cpp
@@ -16,9 +14,20 @@ add_executable(
 
     # CORE
     src/core/logger.hpp
+    src/core/defines.hpp
+
+    # RENDER
+    src/render/shaders.hpp
+    src/render/shaders.cpp
+
+    # GLSL SHADERS
+    src/render/glsl/test_triangle.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
+
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --my-debug-flags")
+target_compile_definitions(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Debug>:BUILD_DEBUG>")
 
 
 # Output dir

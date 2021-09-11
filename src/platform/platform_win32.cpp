@@ -90,7 +90,7 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
     }
     break;
 
-    case WM_MOUSEHWHEEL:
+    case WM_MOUSEWHEEL:
     {
         int delta = GET_WHEEL_DELTA_WPARAM(wParam);
         if (delta != 0)
@@ -173,7 +173,7 @@ Platform::Platform(const string &name, int width, int height)
 
     win32State.handle = CreateWindowExA(
         windowExStyle, "BasicBool_class_name", "BasicBool", windowStyle,
-        NULL, NULL, windowWidth, windowHeight, 0, 0, win32State.hInstance, 0);
+        0, 0, windowWidth, windowHeight, 0, 0, win32State.hInstance, 0);
 
     if (win32State.handle == 0)
     {

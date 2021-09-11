@@ -12,10 +12,10 @@
 #define LOG_INFO_ENABLED 1
 
 // Release mode should exclude debug info.
-#if BUILD_RELEASE
-#define LOG_DEBUG_ENABLED 0
-#else
+#if defined(BUILD_DEBUG)
 #define LOG_DEBUG_ENABLED 1
+#else
+#define LOG_DEBUG_ENABLED 0
 #endif
 
 // Static class, DO NOT USE DIRECTLY ! USE THE DEFINED MACROS AT THE END OF THIS FILE.
@@ -174,20 +174,45 @@ public:
 };
 
 // Macros for ease of use and compile time optimization.
-#define LOGFATAL(message, ...) logger::log(logger::LOG_FATAL, message, __VA_ARGS__)
-#define LOGERROR(message, ...) logger::log(logger::LOG_ERROR, message, __VA_ARGS__)
-#if LOG_WARN_ENABLED
-#define LOGWARN(message, ...) logger::log(logger::LOG_WARN, message, __VA_ARGS__)
+
+#if defined(__clang__) || defined(__GNUC__)
+    #define LOGFATAL(message, ...) logger::log(logger::LOG_FATAL, message __VA_OPT__(,) __VA_ARGS__)
+    #define LOGERROR(message, ...) logger::log(logger::LOG_ERROR, message __VA_OPT__(,) __VA_ARGS__)
+    #if LOG_WARN_ENABLED
+        #define LOGWARN(message, ...) logger::log(logger::LOG_WARN, message __VA_OPT__(,) __VA_ARGS__)
+    #else
+        #define LOGWARN(message, ...)
+    #endif
+    #if LOG_INFO_ENABLED
+        #define LOGINFO(message, ...) logger::log(logger::LOG_INFO, message __VA_OPT__(,) __VA_ARGS__)
+    #else
+        #define LOGINFO(message, ...)
+    #endif
+    #if LOG_DEBUG_ENABLED
+        #define LOGDEBUG(message, ...) logger::log(logger::LOG_DEBUG, message __VA_OPT__(,) __VA_ARGS__)
+    #else
+        #define LOGDEBUG(message, ...)
+    #endif
+#elif defined(_MSC_VER)
+    #define LOGFATAL(message, ...) logger::log(logger::LOG_FATAL, message, __VA_ARGS__)
+    #define LOGERROR(message, ...) logger::log(logger::LOG_ERROR, message, __VA_ARGS__)
+    #if LOG_WARN_ENABLED
+        #define LOGWARN(message, ...) logger::log(logger::LOG_WARN, message, __VA_ARGS__)
+    #else
+        #define LOGWARN(message, ...)
+    #endif
+    #if LOG_INFO_ENABLED
+        #define LOGINFO(message, ...) logger::log(logger::LOG_INFO, message, __VA_ARGS__)
+    #else
+        #define LOGINFO(message, ...)
+    #endif
+    #if LOG_DEBUG_ENABLED
+        #define LOGDEBUG(message, ...) logger::log(logger::LOG_DEBUG, message, __VA_ARGS__)
+    #else
+        #define LOGDEBUG(message, ...)
+    #endif
 #else
-#define LOGWARN(message, ...)
+#error Unsupported compiler
 #endif
-#if LOG_INFO_ENABLED
-#define LOGINFO(message, ...) logger::log(logger::LOG_INFO, message, __VA_ARGS__)
-#else
-#define LOGINFO(message, ...)
-#endif
-#if LOG_DEBUG_ENABLED
-#define LOGDEBUG(message, ...) logger::log(logger::LOG_DEBUG, message, __VA_ARGS__)
-#else
-#define LOGDEBUG(message, ...)
-#endif
+
+// __VA_OPT__(,) __VA_ARGS__
