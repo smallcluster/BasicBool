@@ -52,4 +52,6 @@ public:
     void drawCircle(float x, float y, float r);
     void drawLine(float x1, float y1, float x2, float y2);
     void drawText(float x, float y, string &text);
+
+    void clear(const Color& color);
 };
