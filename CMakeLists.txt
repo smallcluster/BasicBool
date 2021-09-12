@@ -15,10 +15,14 @@ add_executable(
     # CORE
     src/core/logger.hpp
     src/core/defines.hpp
+    # CORE/MATH
+    src/core/math/vector2.hpp
 
     # RENDER
-    src/render/shaders.hpp
-    src/render/shaders.cpp
+    src/render/render.hpp
+    src/render/render.cpp
+    src/render/shader.hpp
+    src/render/shader.cpp
 
     # GLSL SHADERS
     src/render/glsl/test_triangle.h

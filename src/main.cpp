@@ -2,7 +2,9 @@
 #include "core/logger.hpp"
 #include "platform/platform.hpp"
 #include <glad/glad.h>
-#include "render/shaders.hpp"
+
+#include "render/render.hpp"
+#include "render/shader.hpp"
 
 int main(int argc, char const *argv[])
 {

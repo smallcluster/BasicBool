@@ -66,7 +66,6 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
 
     case WM_SIZING:
     {
-        // TODO : remove that
         RECT newRect;
         GetClientRect(hwnd, &newRect);
         win32State.width = newRect.right - newRect.left;

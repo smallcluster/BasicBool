@@ -2,9 +2,9 @@
 
 #include "core/defines.hpp"
 #include <glad/glad.h>
-#include <sstream>
 #include <vector>
 
+// Shader
 class Shader
 {
 private:

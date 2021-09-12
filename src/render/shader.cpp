@@ -1,4 +1,4 @@
-#include "shaders.hpp"
+#include "shader.hpp"
 #include "core/logger.hpp"
 
 std::vector<string> Shader::splitShaderSources(const char *glslCode)
