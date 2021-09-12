@@ -42,7 +42,7 @@ private:
             {
                 state = BraceMatching::CLOSED;
                 chunks.push_back(ss.str());
-                ss = std::stringstream(); // Clear the string stream
+                ss.str(string()); // Clear the string stream
             }
             else
                 ss << c;
