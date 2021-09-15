@@ -6,6 +6,7 @@ std::vector<string> Shader::splitShaderSources(const char *glslCode)
     std::vector<string> shaderCodes;
     std::stringstream vertexCode;
     std::stringstream fragmentCode;
+    std::stringstream geometryCode;
     std::istringstream f(glslCode);
     std::string line;
     enum CodeType
@@ -29,6 +30,9 @@ std::vector<string> Shader::splitShaderSources(const char *glslCode)
             else if (line.find("FRAGMENT") != string::npos){
                 state = CodeType::FRAGMENT;
                 continue;
+            } else if(line.find("GEOMETRY") != string::npos){
+                state = CodeType::GEOMETRY;
+                continue;
             }
         }
         // Read shader code or skip
@@ -41,10 +45,14 @@ std::vector<string> Shader::splitShaderSources(const char *glslCode)
         case CodeType::FRAGMENT:
             fragmentCode << line << '\n';
             break;
+        case CodeType::GEOMETRY:
+            geometryCode << line << '\n';
+            break;
         }
     }
     shaderCodes.push_back(vertexCode.str());
     shaderCodes.push_back(fragmentCode.str());
+    shaderCodes.push_back(geometryCode.str());
     return shaderCodes;
 }
 
@@ -79,6 +87,24 @@ Shader::Shader(const char *glslCode)
     m_program = glCreateProgram();
     glAttachShader(m_program, vertexShader);
     glAttachShader(m_program, fragmentShader);
+
+
+    // We have a geometry shader
+    GLuint geometryShader = 0;
+    if(shaderCodes.size() == 3){
+        const char* geomatryCode = shaderCodes[2].c_str();
+        GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometryShader, 1, &geomatryCode, NULL);
+        glCompileShader(geometryShader);
+        glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+            LOGERROR("Geometry shader compilation failed :\n{}", infoLog);
+        }
+        glAttachShader(m_program, geometryShader);
+    }
+
     glLinkProgram(m_program);
     glGetProgramiv(m_program, GL_LINK_STATUS, &success);
     if (!success)
@@ -88,6 +114,8 @@ Shader::Shader(const char *glslCode)
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    if(shaderCodes.size() == 3)
+        glDeleteShader(geometryShader);
 }
 Shader::~Shader()
 {
@@ -96,4 +124,12 @@ Shader::~Shader()
 void Shader::use()
 {
     glUseProgram(m_program);
+}
+
+void Shader::setFloat(const string &name, float value) const {
+    glUniform1f(glGetUniformLocation(m_program, name.c_str()), value);
+}
+
+void Shader::setVec4(const string &name, float v0, float v1, float v2, float v3) const {
+    glUniform4f(glGetUniformLocation(m_program, name.c_str()), v0, v1, v2, v3);
 }

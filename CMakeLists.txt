@@ -27,6 +27,7 @@ add_executable(
 
     # GLSL SHADERS
     src/render/glsl/test_triangle.h
+    src/render/glsl/rectangle.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

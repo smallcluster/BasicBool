@@ -1,14 +1,12 @@
+R"(
+
 #SHADER VERTEX
 #version 330 core
 layout(location = 0) in vec2 aPos;
 
-
-uniform mat4 view;
-uniform mat4 projection;
-
 void main(){
     // TODO : change this to use a 2d Camera view
-    gl_Position = projection * view * vec4(aPos, 0.0, 1.0);
+    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
 }
 
 #SHADER GEOMETRY
@@ -21,19 +19,19 @@ uniform float width;
 uniform float height;
 
 void main() {
-    vec4 pos = gl_in[0];
+    vec4 pos = gl_in[0].gl_Position;
 
     // Bottom-left corner
-    gl_Position = pos + vec4(0.0, -ProcessedWidth, 0.0, 0.0);
+    gl_Position = pos + vec4(0.0, -height, 0.0, 0.0);
     EmitVertex();
     // Bottom-right corner
-    gl_Position = pos + vec4(w, -ProcessedHeight, 0.0, 0.0);
+    gl_Position = pos + vec4(width, -height, 0.0, 0.0);
     EmitVertex();
     // Top-left corner
     gl_Position = pos;
     EmitVertex();
     // Top-right corner
-    gl_Position = pos + vec4(ProcessedHeight, 0.0, 0.0, 0.0);
+    gl_Position = pos + vec4(width, 0.0, 0.0, 0.0);
     EmitVertex();
 
     EndPrimitive();
@@ -44,24 +42,11 @@ void main() {
 
 out vec4 FragColor;
 
-in vec4 fillColor;
-in vec4 strokeColor;
-int float strokeWeight;
-
-vec4 drawOutline(){
-    if(strokeWeight == 0 || strokeColor.a <= 0.0)
-        return fillColor; 
-}
-
-vec4 drawInside() {
-    if(fillColor.a <= 0.0)
-        discard;
-}
+uniform vec4 fillColor;
 
 void main(){
-
-    vec4 color = vec4(0.0);
-
+    // TODO : handle colors & borders
     FragColor = fillColor;
-
 }
+
+)"
