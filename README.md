@@ -1,6 +1,6 @@
 # ![Alt text](Logo128.png?raw=true "Title") BasicBool
 
-An Windows/Linux application written in C++ to visualize computing using boolean logic.
+A Windows/Linux application written in C++ to visualize computing using boolean logic.
 
 ## Disclaimer
 
@@ -11,7 +11,7 @@ It will take A LOT of time to get something usable, and even more time to have a
 
 - no external libraries apart from GLAD for OpenGL extension loading (What’s the best way to learn than reinventing the wheel?)
 - modern OpenGL
-- cross platform
+- cross-platform
 - simple immediate mode GUI
 - save system
 
