@@ -1,5 +1,7 @@
-#include "shader.hpp"
+#include "backend.hpp"
 #include "core/logger.hpp"
+
+// ---- SHADERS ----
 
 std::vector<string> Shader::splitShaderSources(const char *glslCode)
 {
@@ -117,6 +119,7 @@ Shader::Shader(const char *glslCode)
     if(shaderCodes.size() == 3)
         glDeleteShader(geometryShader);
 }
+
 Shader::~Shader()
 {
     glDeleteProgram(m_program);
@@ -132,4 +135,74 @@ void Shader::setFloat(const string &name, float value) const {
 
 void Shader::setVec4(const string &name, float v0, float v1, float v2, float v3) const {
     glUniform4f(glGetUniformLocation(m_program, name.c_str()), v0, v1, v2, v3);
+}
+
+
+// ---- VETEXBUFFER ----
+
+VertexBuffer::VertexBuffer(const void *data, unsigned int size){
+    glGenBuffers(1, &m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+}
+
+VertexBuffer::~VertexBuffer() {
+    glDeleteBuffers(1, &m_vbo);
+}
+
+void VertexBuffer::bind() const {
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+}
+void VertexBuffer::unbind() const {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+// ---- VERTEXBUFFERELEMENT ----
+unsigned int VertexBufferElement::getTypeSize(unsigned int type){
+    switch (type)
+    {
+    case GL_FLOAT:
+        return sizeof(float);
+    }
+    LOGFATAL("VertexBufferElment::getTypeSize({}) -> unknow type", type);
+    return 0;
+}
+
+// ---- VERTEXBUFFERLAYOUT ----
+
+VertexBufferLayout::VertexBufferLayout() : m_stride(0) {}
+inline const std::vector<VertexBufferElement>& VertexBufferLayout::getElements() const {return m_elements;}
+inline unsigned int VertexBufferLayout::getStride() const {return m_stride;}
+
+
+
+// ---- VERTEXARRAY ----
+
+VertexArray::VertexArray() {
+    glGenVertexArrays(1, &m_vao);
+}
+VertexArray::~VertexArray() {
+    glDeleteVertexArrays(1, &m_vao);
+}
+void VertexArray::bind() const {
+    glBindVertexArray(m_vao);
+}
+void VertexArray::unbind() const {
+    glBindVertexArray(0);
+}
+
+void VertexArray::addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout){
+    bind();
+    vb.bind();
+    const auto& elements = layout.getElements();
+    unsigned int offset = 0;
+    for(unsigned int i=0; i < elements.size(); i++)
+    {
+        const auto& element = elements[i];
+        glEnableVertexAttribArray(i);
+        glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.getStride(), (const void *) offset);
+        offset += element.count * VertexBufferElement::getTypeSize(element.type);
+    }
+
 }

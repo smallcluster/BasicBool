@@ -1,10 +1,11 @@
 #include "core/defines.hpp"
 #include "core/logger.hpp"
 #include "platform/platform.hpp"
+#include "render/render.hpp"
+
 #include <glad/glad.h>
 
-#include "render/render.hpp"
-#include "render/shader.hpp"
+
 
 int main(int argc, char const *argv[])
 {
@@ -22,6 +23,8 @@ int main(int argc, char const *argv[])
         renderer.clear(Color::WHITE);
         // TODO : Change implementation
         renderer.drawRectangle(width/6, height/4, 128, 256);
+        // TODO : Change implementation
+        renderer.drawRectangle(width/2, height/2, 64, 64);
 
         // TODO : create this
         // renderer.render()

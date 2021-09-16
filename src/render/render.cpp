@@ -1,7 +1,6 @@
 #include "render.hpp"
 #include "platform/platform.hpp"
 #include "core/logger.hpp"
-#include "shader.hpp"
 #include <glad/glad.h>
 
 // Some color constants
@@ -13,6 +12,8 @@ const Color Color::GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
 const Color Color::BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
 const Color Color::GREY = {0.5f, 0.5f, 0.5f, 1.0f};
 
+Renderer::Renderer() : m_currentFillColor(Color::GREY), m_currentStrokeColor(Color::BLACK), m_currentStrokeWeight(1.0f) {}
+Renderer::~Renderer() {}
 
 void Renderer::clear(const Color& color)
 {
@@ -28,14 +29,12 @@ void Renderer::drawRectangle(float x, float y, float width, float height)
     int h = p.getHeight();
     float coords[] = { 
         2.0f * (x / (float) w) - 1.0f, -2.0f * (y / (float) h) + 1.0f};
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(coords), coords, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
+
+    VertexArray vao;
+    VertexBuffer vbo(coords, 2*sizeof(float));
+    VertexBufferLayout layout;
+    layout.push<float>(2);
+    vao.addBuffer(vbo, layout);
 
     const char *rectShaderSource = {
         #include "glsl/rectangle.h"
@@ -47,14 +46,22 @@ void Renderer::drawRectangle(float x, float y, float width, float height)
     rectShader.setFloat("height", 2.0f*height / (float) h);
     rectShader.setVec4("fillColor", 1.0f, 0.0f, 0.0f, 1.0f);
 
-    glBindVertexArray(vao);
+    vao.bind();
     glDrawArrays(GL_POINTS, 0, 1);
-    glBindVertexArray(0);
+    vao.unbind();
 
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
+    //m_rectDrawCalls.push_back(RectangleDrawCall(m_currentFillColor, m_currentStrokeColor, m_currentStrokeWeight, x, y, width, height));
 }
 
-Renderer::~Renderer() {
+void Renderer::fillColor(Color color){m_currentFillColor = color;}
+void Renderer::strokeColor(Color color){m_currentStrokeColor = color;}
+void Renderer::strokeWeight(float w) {m_currentStrokeWeight = w;}
 
+
+void Renderer::renderRectangles(){
+    // TODO : implement this
+}
+
+void Renderer::renderFrame() {
+    renderRectangles();
 }

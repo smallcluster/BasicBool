@@ -22,8 +22,8 @@ add_executable(
     src/render/render.hpp
     src/render/render.cpp
     
-    src/render/shader.hpp
-    src/render/shader.cpp
+    src/render/backend.hpp
+    src/render/backend.cpp
 
     # GLSL SHADERS
     src/render/glsl/test_triangle.h

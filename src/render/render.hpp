@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/defines.hpp"
+#include "backend.hpp"
 #include <vector>
 
 struct Color
@@ -20,15 +21,41 @@ struct Color
     const static Color GREY;
 };
 
+struct DrawCall {
+    Color fillColor;
+    Color strokeColor;
+    float strokeWeight;
+};
+
+struct RectangleDrawCall : public DrawCall {
+    float width;
+    float height;
+    float x;
+    float y;
+    RectangleDrawCall(Color fill, Color stroke, float weight, float x, float y, float width, float height){
+        fillColor = fill;
+        strokeColor = stroke;
+        strokeWeight = weight;
+        this->x = x;
+        this->y = y;
+        this-> width = width;
+        this-> height = height;
+    }
+};
+
 class Renderer
 {
 private:
-    Color currentFillColor, currentStrokeColor, backgroundColor;
+    Color m_currentFillColor, m_currentStrokeColor;
+    float m_currentStrokeWeight;
+    std::vector<RectangleDrawCall> m_rectDrawCalls;
+
+    void renderRectangles();
 
 protected:
     Renderer(Renderer &other);
     void operator=(const Renderer &);
-    Renderer() : currentFillColor(Color::GREY), currentStrokeColor(Color::BLACK), backgroundColor(Color::WHITE) {}
+    Renderer();
     ~Renderer();
 
 public:
@@ -38,14 +65,10 @@ public:
         return inst;
     }
 
-    // Inner color
-    void fillColor(const Color &color);
-    void noFill();
+    void fillColor(Color color);
+    void strokeColor(Color color);
+    void strokeWeight(float w);
 
-    // Stroke settings
-    void strokeColor(const Color &color);
-    void noStroke();
-    void strokeWeight(float weight);
 
     // Primitives
     void drawRectangle(float x, float y, float width, float height);
@@ -54,4 +77,5 @@ public:
     void drawText(float x, float y, string &text);
 
     void clear(const Color& color);
+    void renderFrame();
 };
