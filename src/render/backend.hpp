@@ -12,7 +12,10 @@ private:
 public:
     Shader(const char *glslCode);
     void setFloat(const string &name, float value) const;
+    void setInt(const string &name, int value) const;
     void setVec4(const string &name, float v0, float v1, float v2, float v3) const;
+    void setVec2(const string &name, float v0, float v1) const;
+    void setVec3(const string &name, float v0, float v1, float v2) const;
     ~Shader();
     void use();
 };

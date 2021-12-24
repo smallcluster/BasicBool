@@ -78,7 +78,7 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
     case WM_SYSKEYUP:
     {
         bool pressed = umsg == WM_KEYDOWN || umsg == WM_SYSKEYDOWN;
-        // TODO : handle input
+        // TODO : handle keyboard input
     }
     break;
 
@@ -94,7 +94,7 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
         int delta = GET_WHEEL_DELTA_WPARAM(wParam);
         if (delta != 0)
             delta = delta < 0 ? -1 : 1; // Normalize input for OS-independent use
-        // TODO : handle input
+        // TODO : handle mouse wheel input
     }
     break;
 
@@ -106,7 +106,7 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
     case WM_MBUTTONUP:
     {
         bool pressed = umsg == WM_LBUTTONDOWN || umsg == WM_RBUTTONDOWN || umsg == WM_MBUTTONDOWN;
-        // TODO : handle input
+        // TODO : handle mouse button input
     }
     break;
 
@@ -190,6 +190,7 @@ Platform::Platform(const string &name, int width, int height)
     pfd.iPixelType = PFD_TYPE_RGBA;
     pfd.cColorBits = 32; // color depth (in bits)
     pfd.cDepthBits = 24; // depth buffer precision (int bits)
+    pfd.cStencilBits = 8; // stencil buffer ALWAYS 8
     pfd.iLayerType = PFD_MAIN_PLANE;
 
     int nPixelFormat = ChoosePixelFormat(win32State.hDC, &pfd);

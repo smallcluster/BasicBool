@@ -16,7 +16,7 @@ std::vector<string> Shader::splitShaderSources(const char *glslCode)
         NONE,
         VEXRTEX,
         FRAGMENT,
-        GEOMETRY // TODO : handle this case
+        GEOMETRY
     };
     CodeType state = CodeType::NONE;
     while (std::getline(f, line))
@@ -133,8 +133,18 @@ void Shader::setFloat(const string &name, float value) const {
     glUniform1f(glGetUniformLocation(m_program, name.c_str()), value);
 }
 
+void Shader::setInt(const string &name, int value) const {
+    glUniform1i(glGetUniformLocation(m_program, name.c_str()), value);
+}
+
 void Shader::setVec4(const string &name, float v0, float v1, float v2, float v3) const {
     glUniform4f(glGetUniformLocation(m_program, name.c_str()), v0, v1, v2, v3);
+}
+void Shader::setVec3(const string &name, float v0, float v1, float v2) const {
+    glUniform3f(glGetUniformLocation(m_program, name.c_str()), v0, v1, v2);
+}
+void Shader::setVec2(const string &name, float v0, float v1) const {
+    glUniform2f(glGetUniformLocation(m_program, name.c_str()), v0, v1);
 }
 
 

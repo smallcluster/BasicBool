@@ -21,36 +21,11 @@ struct Color
     const static Color GREY;
 };
 
-struct DrawCall {
-    Color fillColor;
-    Color strokeColor;
-    float strokeWeight;
-};
-
-struct RectangleDrawCall : public DrawCall {
-    float width;
-    float height;
-    float x;
-    float y;
-    RectangleDrawCall(Color fill, Color stroke, float weight, float x, float y, float width, float height){
-        fillColor = fill;
-        strokeColor = stroke;
-        strokeWeight = weight;
-        this->x = x;
-        this->y = y;
-        this-> width = width;
-        this-> height = height;
-    }
-};
-
 class Renderer
 {
 private:
     Color m_currentFillColor, m_currentStrokeColor;
     float m_currentStrokeWeight;
-    std::vector<RectangleDrawCall> m_rectDrawCalls;
-
-    void renderRectangles();
 
 protected:
     Renderer(Renderer &other);
@@ -70,12 +45,17 @@ public:
     void strokeWeight(float w);
 
 
-    // Primitives
     void drawRectangle(float x, float y, float width, float height);
-    void drawCircle(float x, float y, float r);
+    void drawEllipse(float x, float y, float width, float height);
+
+    // TODO : implement this
     void drawLine(float x1, float y1, float x2, float y2);
     void drawText(float x, float y, string &text);
+    void noStroke();
+    void noFill();
+    void textSize(float pt);
+    float getTextHeight(string &text);
+    float getTextWidth(string &text);
 
     void clear(const Color& color);
-    void renderFrame();
 };

@@ -26,8 +26,8 @@ add_executable(
     src/render/backend.cpp
 
     # GLSL SHADERS
-    src/render/glsl/test_triangle.h
     src/render/glsl/rectangle.h
+    src/render/glsl/ellipse.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

@@ -52,13 +52,11 @@ uniform vec2 sw;
 varying vec2 uv;
 
 void main(){
-
-    if((uv.x <= sw.x || uv.x >= 1.0-sw.x || uv.y <= sw.y || uv.y >= 1.0-sw.y) && strokeColor.a > 0.0)
-        FragColor = strokeColor;
-    else if(fillColor.a > 0.0)
-        FragColor = fillColor;
-    else
-        discard;
+    float d = sqrt((uv.x-0.5)*(uv.x-0.5)+(uv.y-0.5)*(uv.y-0.5));
+    float delta = 0.01;
+    float alpha = 1.0 - smoothstep(0.45 - delta, 0.45, d);
+    float stroke = 1.0 - smoothstep(0.5-sw.x*2 - delta, 0.5-sw.x*2 + delta, d);
+    FragColor = vec4(mix(strokeColor.rgb, fillColor.rgb, stroke), alpha);
 }
 
 )"
