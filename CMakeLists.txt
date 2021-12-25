@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
+set (CMAKE_CXX_STANDARD 11)
+
 project(BasicBool)
 
 add_executable(
@@ -15,19 +17,11 @@ add_executable(
     # CORE
     src/core/logger.hpp
     src/core/defines.hpp
-    # CORE/MATH
-    src/core/math/vector2.hpp
+    src/core/math.hpp
 
     # RENDER
-    src/render/render.hpp
-    src/render/render.cpp
-    
     src/render/backend.hpp
     src/render/backend.cpp
-
-    # GLSL SHADERS
-    src/render/glsl/rectangle.h
-    src/render/glsl/ellipse.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

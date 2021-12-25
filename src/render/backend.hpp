@@ -1,21 +1,31 @@
 #pragma once
-
 #include "core/defines.hpp"
+#include "core/math.hpp"
 #include <glad/glad.h>
 #include <vector>
+
 
 class Shader
 {
 private:
     GLuint m_program;
-    std::vector<string> splitShaderSources(const char *glslCode);
+    std::vector<string> splitShaderSources(const string &glslCode);
 public:
-    Shader(const char *glslCode);
+    Shader(const string &glslCode);
     void setFloat(const string &name, float value) const;
+
     void setInt(const string &name, int value) const;
     void setVec4(const string &name, float v0, float v1, float v2, float v3) const;
     void setVec2(const string &name, float v0, float v1) const;
     void setVec3(const string &name, float v0, float v1, float v2) const;
+
+    void setVec4(const string &name, const vec4 &v) const;
+    void setVec2(const string &name, const vec2 &v) const;
+    void setVec3(const string &name, const vec3 &v) const;
+    void setMat4(const string &name, const mat4 &m) const;
+    void setMat3(const string &name, const mat3 &m) const;
+
+
     ~Shader();
     void use();
 };
@@ -77,3 +87,5 @@ class VertexArray
         void bind() const;
         void unbind() const;
 };
+
+string readShaderSource(const string &path);
