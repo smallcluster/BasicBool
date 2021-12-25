@@ -192,6 +192,24 @@ void VertexBuffer::unbind() const {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// ---- ELEMENTBUFFER ----
+
+ElementBuffer::ElementBuffer(const void *data, unsigned int size){
+    glGenBuffers(1, &m_ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+}
+
+ElementBuffer::~ElementBuffer() {
+    glDeleteBuffers(1, &m_ebo);
+}
+
+void ElementBuffer::bind() const {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+}
+void ElementBuffer::unbind() const {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
 
 // ---- VERTEXBUFFERELEMENT ----
 unsigned int VertexBufferElement::getTypeSize(unsigned int type){
@@ -242,8 +260,12 @@ void VertexArray::addBuffer(const VertexBuffer& vb, const VertexBufferLayout& la
 
 }
 
-// HELPER
+void VertexArray::addBuffer(const ElementBuffer& ebo){
+    bind();
+    ebo.bind();
+}
 
+// HELPER
 string readShaderSource(const string &path) {
     std::ifstream t(path);
     std::stringstream buffer;

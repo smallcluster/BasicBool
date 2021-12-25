@@ -41,6 +41,20 @@ class VertexBuffer
         void unbind() const;
 };
 
+class ElementBuffer
+{
+    private:
+        GLuint m_ebo;
+    public:
+        ElementBuffer(const void *data, unsigned int size);
+        ~ElementBuffer();
+        void bind() const;
+        void unbind() const;
+};
+
+
+
+
 struct VertexBufferElement
 {
     unsigned int type;
@@ -84,6 +98,7 @@ class VertexArray
         VertexArray();
         ~VertexArray();
         void addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
+        void addBuffer(const ElementBuffer& ebo);
         void bind() const;
         void unbind() const;
 };

@@ -21,9 +21,15 @@ int main(int argc, char const *argv[])
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
     // Shaders
-    string basicShaderSource = readShaderSource("res/shaders/basic.glsl");
-    Shader basicShader(basicShaderSource);
+    string basicSource = readShaderSource("res/shaders/basic.glsl");
+    Shader basicShader(basicSource);
+
+    string rectShadowSource = readShaderSource("res/shaders/rect_shadow.glsl");
+    Shader rectShadowShader(rectShadowSource);
 
     while (platform.processEvents())
     {
@@ -34,6 +40,8 @@ int main(int argc, char const *argv[])
         mat4 pmat(vec4(2.0f/width, 0, 0, 0), vec4(0, -2.0f/height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
 
         glViewport(0, 0, width, height);
+
+        // TODO : make a simple GUI lib
 
         // --- Background --- //
         float bgVal = 35.0f/255.0f;
@@ -64,9 +72,38 @@ int main(int argc, char const *argv[])
         basicShader.setVec3("color", vec3(77.0f/255.0f));
 
         vao.bind();
+        glDepthMask(GL_FALSE); // disable depth writing for lines
         glDrawArrays(GL_LINES, 0, 2*(nx+ny+2));
-        vao.unbind();
-        
+        glDepthMask(GL_TRUE);
+
+
+        // rectangle shadows
+        float rect[16] = {
+            // pos    // uv
+            width/2.0f-100, height/2.0f-100,     0, 0, // top left
+            width/2.0f+100, height/2.0f-100,   1, 0, // top right
+            width/2.0f+100, height/2.0f+100, 1, 1, // bottom right
+            width/2.0f-100, height/2.0f+100,   0, 1, // bottom left
+
+        };
+        unsigned int rectIndices[6] = {0, 1, 2, 0, 2, 3};
+
+        VertexArray rectVao;
+        VertexBuffer rectVbo(rect, sizeof(rect));
+        VertexBufferLayout rectLayout;
+        rectLayout.push<float>(2); // pos
+        rectLayout.push<float>(2); // uv
+        rectVao.addBuffer(rectVbo, rectLayout);
+        ElementBuffer rectEbo(rectIndices, sizeof(rectIndices));
+        rectVao.addBuffer(rectEbo);
+
+        rectShadowShader.use();
+        rectShadowShader.setMat4("pmat", pmat);
+        rectShadowShader.setVec4("color", vec4(vec3(0.0), 0.5));
+
+        rectVao.bind();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
         platform.swapBuffers();
     }
     return 0;
