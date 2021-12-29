@@ -18,8 +18,10 @@ int main(int argc, char const *argv[])
     Platform &platform = Platform::getInstance("BasicBool", 1280, 720);
 
     // Opengl Setup
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
+    //glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_STENCIL_TEST);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -28,8 +30,11 @@ int main(int argc, char const *argv[])
     string basicSource = readShaderSource("res/shaders/basic.glsl");
     Shader basicShader(basicSource);
 
-    string rectShadowSource = readShaderSource("res/shaders/rect_shadow.glsl");
-    Shader rectShadowShader(rectShadowSource);
+    string nodeSource = readShaderSource("res/shaders/node.glsl");
+    Shader nodeShader(nodeSource);
+
+    string nodeShadowSource = readShaderSource("res/shaders/node_shadow.glsl");
+    Shader nodeShadowShader(nodeShadowSource);
 
     while (platform.processEvents())
     {
@@ -41,7 +46,8 @@ int main(int argc, char const *argv[])
 
         glViewport(0, 0, width, height);
 
-        // TODO : make a simple GUI lib
+        // Begin drawing
+
 
         // --- Background --- //
         float bgVal = 35.0f/255.0f;
@@ -72,22 +78,29 @@ int main(int argc, char const *argv[])
         basicShader.setVec3("color", vec3(77.0f/255.0f));
 
         vao.bind();
-        glDepthMask(GL_FALSE); // disable depth writing for lines
         glDrawArrays(GL_LINES, 0, 2*(nx+ny+2));
-        glDepthMask(GL_TRUE);
 
 
-        // rectangle shadows
-        float rect[16] = {
-            // pos    // uv
-            width/2.0f-100, height/2.0f-100,     0, 0, // top left
-            width/2.0f+100, height/2.0f-100,   1, 0, // top right
-            width/2.0f+100, height/2.0f+100, 1, 1, // bottom right
-            width/2.0f-100, height/2.0f+100,   0, 1, // bottom left
+        // ---- NODE TEST ---- //
 
-        };
+        float cx = width/2.0f;
+        float cy = height/2.0f;
+        float w = 139;
+        float headerHeight = 31;
+        float bodyHeight = 57;
+        float h = headerHeight+bodyHeight;
+        float r = 8;
+        float s = 16;
         unsigned int rectIndices[6] = {0, 1, 2, 0, 2, 3};
 
+        // Shadow
+        float rect[16] = {
+            // pos    // uv
+            cx-w/2.0f-s, cy-h/2.0f-s,     0, 0, // top left
+            cx+w/2.0f+s, cy-h/2.0f-s,     1, 0, // top right
+            cx+w/2.0f+s, cy+h/2.0f+s,     1, 1, // bottom right
+            cx-w/2.0f-s, cy+h/2.0f+s,     0, 1, // bottom left
+        };
         VertexArray rectVao;
         VertexBuffer rectVbo(rect, sizeof(rect));
         VertexBufferLayout rectLayout;
@@ -97,13 +110,43 @@ int main(int argc, char const *argv[])
         ElementBuffer rectEbo(rectIndices, sizeof(rectIndices));
         rectVao.addBuffer(rectEbo);
 
-        rectShadowShader.use();
-        rectShadowShader.setMat4("pmat", pmat);
-        rectShadowShader.setVec4("color", vec4(vec3(0.0), 0.5));
-
+        nodeShadowShader.use();
+        nodeShadowShader.setMat4("pmat", pmat);
+        nodeShadowShader.setFloat("width", w+2*s);
+        nodeShadowShader.setFloat("height", h+2*s);
+        nodeShadowShader.setFloat("smoothing", s);
+        nodeShadowShader.setFloat("radius", r);
         rectVao.bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+
+        // node
+        float rectNode[16] = {
+            // pos    // uv
+            cx-w/2.0f, cy-h/2.0f,     0, 0, // top left
+            cx+w/2.0f, cy-h/2.0f,     1, 0, // top right
+            cx+w/2.0f, cy+h/2.0f,     1, 1, // bottom right
+            cx-w/2.0f, cy+h/2.0f,     0, 1, // bottom left
+        };
+        VertexArray rectNodeVao;
+        VertexBuffer rectNodeVbo(rectNode, sizeof(rectNode));
+        VertexBufferLayout rectNodeLayout;
+        rectNodeLayout.push<float>(2); // pos
+        rectNodeLayout.push<float>(2); // uv
+        rectNodeVao.addBuffer(rectNodeVbo, rectNodeLayout);
+        ElementBuffer rectNodeEbo(rectIndices, sizeof(rectIndices));
+        rectNodeVao.addBuffer(rectNodeEbo);
+
+        nodeShader.use();
+        nodeShader.setMat4("pmat", pmat);
+        nodeShader.setFloat("width", w);
+        nodeShader.setFloat("height", h);
+        nodeShader.setFloat("radius", r);
+        nodeShader.setFloat("headerHeight", headerHeight);
+        rectNodeVao.bind();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // End drawing
         platform.swapBuffers();
     }
     return 0;

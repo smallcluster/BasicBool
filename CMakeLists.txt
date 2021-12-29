@@ -6,8 +6,9 @@ project(BasicBool)
 
 add_executable(
     ${PROJECT_NAME}
-    #WIN32
     src/main.cpp
+    src/nodes.hpp
+    src/nodes.cpp
     
     # PLATFORM
     src/platform/platform.hpp
@@ -22,6 +23,9 @@ add_executable(
     # RENDER
     src/render/backend.hpp
     src/render/backend.cpp
+
+    # NODES
+
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
