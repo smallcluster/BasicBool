@@ -127,7 +127,6 @@ int main(int argc, char const *argv[])
         shapes.drawQuad();
 
         // connectors
-
         float dr = 16.0f;
         trans = identity<4>();
         trans = scale(trans, vec3(dr, dr, 1));

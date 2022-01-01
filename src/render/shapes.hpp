@@ -9,10 +9,11 @@ protected:
     Shapes();
 
 private:
-    // QUAD
     // WARNING :
-    // VBO & EBO are stored du to a bug on AMD drivers not letting OpenGL manage
+    // VBO & EBO need to be stored, thanks to a bug with AMD drivers not letting OpenGL manage
     // the memory by it self.
+
+    // QUAD
     VertexArray m_quadVAO;
     VertexBuffer m_quadVBO;
     ElementBuffer m_quadEBO;
