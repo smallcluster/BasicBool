@@ -1,6 +1,7 @@
 #pragma once
-
+#include "defines.hpp"
 #include <cmath>
+
 
 // ----------------- VECTORS ----------------- //
 
@@ -285,7 +286,142 @@ struct Matrix {
     constexpr float operator[](const int index) const {
         return data[index];
     }
+
+    operator std::string() const { 
+        string s = "[\n";
+        for(int i=0; i < m; i++){
+            for(int j=0; j < n; j++)
+                s += std::to_string(data[j*n+i]) + "  ";
+            s += "\n";
+        }
+        s += "]\n";
+        return s;
+    }
 };
+
+template<int n, int m, int p>
+constexpr Matrix<p, m> operator*(const Matrix<n,m> &m1, const Matrix<p,n> &m2){
+    Matrix<p, n> mat;
+    for(int c=0; c < p; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = 0;
+            for(int i=0; i < n; i++)
+                mat[{c,l}] += m1[{i,l}]*m2[{c,i}];
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Vector<m> operator*(const Matrix<n,m> &m1, const Vector<n> &v){
+    Vector<m> vec;
+    for(int i=0; i < m; i++){
+        vec[i] = 0;
+        for(int j=0; j < n; j++)
+            vec[i] += v[j]*m1[{j, i}];
+    }
+    return vec;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator+(const Matrix<n,m> &m1, const Matrix<n,m> &m2){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = m1[{c,l}] + m2[{c,l}];
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator-(const Matrix<n,m> &m1, const Matrix<n,m> &m2){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = m1[{c,l}] - m2[{c,l}];
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator*(const Matrix<n,m> &m1, const float v){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = v * m1[{c,l}];
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator*(const float v, const Matrix<n,m> &m1){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = v * m1[{c,l}];;
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator/(const Matrix<n,m> &m1, const float v){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = m1[{c,l}] / v;
+        }
+    }
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n, m> operator/(const float v, const Matrix<n,m> &m1){
+    Matrix<n, m> mat;
+    for(int c=0; c < n; c++){
+        for(int l=0; l < m; l++){
+            mat[{c,l}] = v / m1[{c,l}];;
+        }
+    }
+    return mat;
+}
+
+template<int n>
+constexpr Matrix<n,n> identity() {
+    Matrix<n,n> mat;
+    for(int i=0; i < n; i++)
+        mat[{i,i}] = 1;
+    return mat;
+}
+
+template<int n>
+constexpr Matrix<n,n> translate(const Matrix<n,n> &m, const Vector<n-1> &v) {
+    Matrix<n,n> mat = m;
+    for(int i=0; i < n-1; i++)
+        mat[{n-1, i}] += v[i];
+    return mat;
+}
+
+template<int n>
+constexpr Matrix<n,n> scale(const Matrix<n,n> &m, const Vector<n-1> &v) {
+    Matrix<n,n> mat = m;
+    for(int i=0; i < n-1; i++)
+        mat[{i, i}] *= v[i];
+    return mat;
+}
+
+template<int n, int m>
+constexpr Matrix<n,n> extract(const Matrix<m,m> &m1) {
+    Matrix<n,n> mat;
+    for(int i=0; i < n; i++)
+        for(int j=0; j < n; j++)
+            mat[{i,j}] = m1[{i,j}];
+    return mat;
+}
+
 
 // Common type
 typedef Matrix<3, 3> mat3;
@@ -315,6 +451,17 @@ struct Matrix<3, 3>{
         return data[index];
     }
 
+    operator std::string() const { 
+        string s = "[\n";
+        for(int i=0; i < 3; i++){
+            for(int j=0; j < 3; j++)
+                s += std::to_string(data[j*3+i]) + "  ";
+            s += "\n";
+        }
+        s += "]\n";
+        return s;
+    }
+
 
     Matrix<3, 3>(const Vector<3> &c1, const Vector<3> &c2, const Vector<3> &c3){
         data[0] = c1.x;
@@ -328,17 +475,29 @@ struct Matrix<3, 3>{
         data[8] = c3.z;
     }
 
+    Matrix<3, 3>(const Matrix<2,2> &m){
+        data[0] = m[{0,0}];
+        data[1] = m[{0,1}];
+        data[2] = 0;
+        data[3] = m[{1,0}];
+        data[4] = m[{1,1}];
+        data[5] = 0;
+        data[6] = 0;
+        data[7] = 0;
+        data[8] = 0;
+    }
+
     Matrix<3, 3>(){
-        data[0] = 1;
+        data[0] = 0;
         data[1] = 0;
         data[2] = 0;
         data[3] = 0;
-        data[4] = 1;
+        data[4] = 0;
         data[5] = 0;
 
         data[6] = 0;
         data[7] = 0;
-        data[8] = 1;
+        data[8] = 0;
     }
 };
 
@@ -362,6 +521,17 @@ struct Matrix<4, 4> {
 
     constexpr float operator[](const int index) const {
         return data[index];
+    }
+
+    operator std::string() const { 
+        string s = "[\n";
+        for(int i=0; i < 4; i++){
+            for(int j=0; j < 4; j++)
+                s += std::to_string(data[j*4+i]) + "  ";
+            s += "\n";
+        }
+        s += "]\n";
+        return s;
     }
 
     Matrix<4, 4>(const Vector<4> &c1, const Vector<4> &c2, const Vector<4> &c3, const Vector<4> &c4){
@@ -399,26 +569,26 @@ struct Matrix<4, 4> {
         data[12] = 0;
         data[13] = 0;
         data[14] = 0;
-        data[15] = 1;
+        data[15] = 0;
     }
 
     Matrix<4, 4>(){
-        data[0] = 1;
+        data[0] = 0;
         data[1] = 0;
         data[2] = 0;
         data[3] = 0;
         data[4] = 0;
-        data[5] = 1;
+        data[5] = 0;
         data[6] = 0;
         data[7] = 0;
         data[8] = 0;
         data[9] = 0;
-        data[10] = 1;
+        data[10] = 0;
         data[11] = 0;
         data[12] = 0;
         data[13] = 0;
         data[14] = 0;
-        data[15] = 1;
+        data[15] = 0;
     }
-
 };
+

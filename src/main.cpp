@@ -4,6 +4,7 @@
 #include "platform/platform.hpp"
 #include <glad/glad.h>
 #include "render/backend.hpp"
+#include "render/shapes.hpp"
 
 
 int main(int argc, char const *argv[])
@@ -35,6 +36,9 @@ int main(int argc, char const *argv[])
 
     string nodeShadowSource = readShaderSource("res/shaders/node_shadow.glsl");
     Shader nodeShadowShader(nodeShadowSource);
+
+    // Shapes
+    Shapes &shapes = Shapes::getInstance();
 
     while (platform.processEvents())
     {
@@ -74,7 +78,8 @@ int main(int argc, char const *argv[])
         vao.addBuffer(vbo, layout);
 
         basicShader.use();
-        basicShader.setMat4("pmat", pmat);
+        basicShader.setMat4("projection", pmat);
+        basicShader.setMat4("transform", identity<4>());
         basicShader.setVec3("color", vec3(77.0f/255.0f));
 
         vao.bind();
@@ -83,68 +88,40 @@ int main(int argc, char const *argv[])
 
         // ---- NODE TEST ---- //
 
-        float cx = width/2.0f;
-        float cy = height/2.0f;
+        float cx = platform.getMouseX();
+        float cy = platform.getMouseY();
         float w = 139;
         float headerHeight = 31;
         float bodyHeight = 57;
         float h = headerHeight+bodyHeight;
         float r = 8;
         float s = 16;
-        unsigned int rectIndices[6] = {0, 1, 2, 0, 2, 3};
 
         // Shadow
-        float rect[16] = {
-            // pos    // uv
-            cx-w/2.0f-s, cy-h/2.0f-s,     0, 0, // top left
-            cx+w/2.0f+s, cy-h/2.0f-s,     1, 0, // top right
-            cx+w/2.0f+s, cy+h/2.0f+s,     1, 1, // bottom right
-            cx-w/2.0f-s, cy+h/2.0f+s,     0, 1, // bottom left
-        };
-        VertexArray rectVao;
-        VertexBuffer rectVbo(rect, sizeof(rect));
-        VertexBufferLayout rectLayout;
-        rectLayout.push<float>(2); // pos
-        rectLayout.push<float>(2); // uv
-        rectVao.addBuffer(rectVbo, rectLayout);
-        ElementBuffer rectEbo(rectIndices, sizeof(rectIndices));
-        rectVao.addBuffer(rectEbo);
-
+        mat4 trans = identity<4>();
+        trans = scale(trans, vec3(w+2*s, h+2*s, 1));
+        trans = translate(trans, vec3(cx, cy, 0));
         nodeShadowShader.use();
-        nodeShadowShader.setMat4("pmat", pmat);
+        nodeShadowShader.setMat4("projection", pmat);
+        nodeShadowShader.setMat4("transform", trans);
         nodeShadowShader.setFloat("width", w+2*s);
         nodeShadowShader.setFloat("height", h+2*s);
         nodeShadowShader.setFloat("smoothing", s);
         nodeShadowShader.setFloat("radius", r);
-        rectVao.bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+        shapes.drawQuad();
 
         // node
-        float rectNode[16] = {
-            // pos    // uv
-            cx-w/2.0f, cy-h/2.0f,     0, 0, // top left
-            cx+w/2.0f, cy-h/2.0f,     1, 0, // top right
-            cx+w/2.0f, cy+h/2.0f,     1, 1, // bottom right
-            cx-w/2.0f, cy+h/2.0f,     0, 1, // bottom left
-        };
-        VertexArray rectNodeVao;
-        VertexBuffer rectNodeVbo(rectNode, sizeof(rectNode));
-        VertexBufferLayout rectNodeLayout;
-        rectNodeLayout.push<float>(2); // pos
-        rectNodeLayout.push<float>(2); // uv
-        rectNodeVao.addBuffer(rectNodeVbo, rectNodeLayout);
-        ElementBuffer rectNodeEbo(rectIndices, sizeof(rectIndices));
-        rectNodeVao.addBuffer(rectNodeEbo);
-
+        trans = identity<4>();
+        trans = scale(trans, vec3(w, h, 1));
+        trans = translate(trans, vec3(cx, cy, 0));
         nodeShader.use();
-        nodeShader.setMat4("pmat", pmat);
+        nodeShader.setMat4("projection", pmat);
+        nodeShader.setMat4("transform", trans);
         nodeShader.setFloat("width", w);
         nodeShader.setFloat("height", h);
         nodeShader.setFloat("radius", r);
         nodeShader.setFloat("headerHeight", headerHeight);
-        rectNodeVao.bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        shapes.drawQuad();
 
         // End drawing
         platform.swapBuffers();

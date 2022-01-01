@@ -1,6 +1,7 @@
 #pragma once
 #include "core/defines.hpp"
 #include "core/math.hpp"
+#include "core/logger.hpp"
 #include <glad/glad.h>
 #include <vector>
 

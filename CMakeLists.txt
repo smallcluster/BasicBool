@@ -23,6 +23,8 @@ add_executable(
     # RENDER
     src/render/backend.hpp
     src/render/backend.cpp
+    src/render/shapes.hpp
+    src/render/shapes.cpp
 
     # NODES
 

@@ -28,4 +28,6 @@ public:
     void swapBuffers();
     int getWidth();
     int getHeight();
+    int getMouseX();
+    int getMouseY();
 };

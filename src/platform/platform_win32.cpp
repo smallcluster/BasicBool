@@ -28,6 +28,7 @@ struct Win32State
     HGLRC glrc = nullptr; // OpenGl context
     bool shouldClose = false;
     int width, height;
+    int mouseX, mouseY;
 };
 
 static Win32State win32State;
@@ -84,8 +85,8 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
 
     case WM_MOUSEMOVE:
     {
-        int mouseX = GET_X_LPARAM(lParam);
-        int mouseY = GET_Y_LPARAM(lParam);
+        win32State.mouseX = GET_X_LPARAM(lParam);
+        win32State.mouseY = GET_Y_LPARAM(lParam);
     }
     break;
 
@@ -263,6 +264,14 @@ bool Platform::processEvents()
 void Platform::swapBuffers()
 {
     SwapBuffers(win32State.hDC);
+}
+
+int Platform::getMouseX(){
+    return win32State.mouseX;
+}
+
+int Platform::getMouseY(){
+    return win32State.mouseY;
 }
 
 #endif
