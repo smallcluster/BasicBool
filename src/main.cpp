@@ -37,6 +37,9 @@ int main(int argc, char const *argv[])
     string nodeShadowSource = readShaderSource("res/shaders/node_shadow.glsl");
     Shader nodeShadowShader(nodeShadowSource);
 
+    string nodeConnectorSource = readShaderSource("res/shaders/node_connector.glsl");
+    Shader nodeConnectorShader(nodeConnectorSource);
+
     // Shapes
     Shapes &shapes = Shapes::getInstance();
 
@@ -121,6 +124,21 @@ int main(int argc, char const *argv[])
         nodeShader.setFloat("height", h);
         nodeShader.setFloat("radius", r);
         nodeShader.setFloat("headerHeight", headerHeight);
+        shapes.drawQuad();
+
+        // connectors
+
+        float dr = 16.0f;
+        trans = identity<4>();
+        trans = scale(trans, vec3(dr, dr, 1));
+        trans = translate(trans, vec3(cx-w/2.0f+dr/2.0f+4, cy-h/2.0f+headerHeight+dr/2.0f+4, 0));
+        nodeConnectorShader.use();
+        nodeConnectorShader.setMat4("projection", pmat);
+        nodeConnectorShader.setMat4("transform", trans);
+        nodeConnectorShader.setFloat("width", dr);
+        nodeConnectorShader.setFloat("height", dr);
+        nodeConnectorShader.setFloat("radius", dr/2.0f);
+        nodeConnectorShader.setVec3("insideColor", vec3(0));
         shapes.drawQuad();
 
         // End drawing

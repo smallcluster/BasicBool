@@ -20,31 +20,39 @@ out vec4 FragColor;
 
 in vec2 uv;
 
+uniform float radius;
 uniform float width;
 uniform float height;
-uniform float radius;
-uniform float headerHeight;
+
+uniform vec3 insideColor;
 
 
-// SDF functions
-float rect(vec2 p, vec2 c, float w, float h, float r){
-    vec2 size = vec2(w-r, h-r);
-    vec2 o = p-c;
-    vec2 d = abs(o)-size;
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
+float circle(vec2 p, vec2 c, float r){
+    vec2 d = abs(p-c);
+    return length(max(d, 0.0)) - r;
 }
+
 
 void main(){
     // fragment pos in the rectangle
     vec2 p = vec2(uv.x*width, uv.y*height);
 
-    float d = rect(p, vec2(width/2.0, height/2.0), width/2.0-1.5, height/2.0-1.5, radius);
+    vec2 c = vec2(width/2.0, height/2.0);
+
+    
+    float d1 = circle(p, c, radius-1.5);
+    float d2 = circle(p, c, 3.0*radius/4.0); // Inside
+    float d = max(-d2, d1); // Ring
 
     // mixing coef
     float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
+    float res2 = step(0., d2);
 
+    vec4 col = vec4(0);
+    col = mix(vec4(insideColor, 1), col, res2);
+    col = mix(vec4(1), col, res);
+    
     // final result
-    vec3 color = (p.y <= headerHeight) ? vec3(1,0,0) : vec3(0.2);
-    FragColor = mix(vec4(color,1), vec4(color, 0), res);
+    FragColor = col;
 }
 

@@ -38,7 +38,7 @@ void main(){
     vec2 p = vec2(uv.x*width, uv.y*height);
 
     // shape
-    float d = rect(p, vec2(width/2.0, height/2.0), width/2.0-smoothing, height/2.0-smoothing, radius);
+    float d = rect(p, vec2(width/2.0, height/2.0), width/2.0-smoothing-1.5, height/2.0-smoothing-1.5, radius);
 
     // mixing coef
     float res = smoothstep(0., smoothing, d);
