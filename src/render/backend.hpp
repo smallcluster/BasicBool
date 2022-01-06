@@ -1,7 +1,7 @@
 #pragma once
 #include "core/defines.hpp"
-#include "core/math.hpp"
 #include "core/logger.hpp"
+#include "core/math.hpp"
 #include <glad/glad.h>
 #include <vector>
 
@@ -102,6 +102,18 @@ class VertexArray
         void addBuffer(const ElementBuffer& ebo);
         void bind() const;
         void unbind() const;
+};
+
+// TODO
+class Texture{
+    private:
+        unsigned int m_texture;
+        int m_unit = 0;
+    public:
+        Texture(const string &path);
+        ~Texture();
+        void bind(int unit);
+        void unbind();
 };
 
 string readShaderSource(const string &path);

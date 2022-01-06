@@ -16,6 +16,7 @@ int main(int argc, char const *argv[])
     static_assert(sizeof(mat4) == sizeof(GLfloat) * 16, "Can't pack mat4.");
     static_assert(sizeof(mat3) == sizeof(GLfloat) * 9,  "Can't pack mat3.");
 
+
     Platform &platform = Platform::getInstance("BasicBool", 1280, 720);
 
     // Opengl Setup
@@ -59,8 +60,9 @@ int main(int argc, char const *argv[])
         // --- Background --- //
         float bgVal = 35.0f/255.0f;
         glClearColor(bgVal, bgVal, bgVal, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         // --- Grid --- //
         int nx = width / 16;
         int ny = height / 16;
@@ -139,6 +141,9 @@ int main(int argc, char const *argv[])
         nodeConnectorShader.setFloat("radius", dr/2.0f);
         nodeConnectorShader.setVec3("insideColor", vec3(0));
         shapes.drawQuad();
+
+        // text rendering
+        
 
         // End drawing
         platform.swapBuffers();
