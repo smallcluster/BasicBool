@@ -23,6 +23,7 @@ struct Text {
     string textString;
     float fontSize;
     vec2 position;
+    vec3 color;
 };
 class Font {
     private:
@@ -32,7 +33,7 @@ class Font {
         float m_lineHeight;
         vec4 m_padding;
         std::map<char, Glyph> m_glyphs;
-        std::vector<Text> m_txt;
+        std::map<vec3, std::vector<Text>> m_data;
     public:
         Font(const string &name);
         Texture &getTexture();
@@ -41,6 +42,6 @@ class Font {
         float getSize();
         float getLigneHeight();
         vec4 getPadding();
-        void text(const string &textString, vec2 position, float size);
-        void render();
+        void text(const string &textString, vec2 position, float size, vec3 color);
+        void render(Shader &shader, const mat4 &projection);
 };
