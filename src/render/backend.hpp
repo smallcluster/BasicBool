@@ -12,7 +12,7 @@ private:
     GLuint m_program;
     std::vector<string> splitShaderSources(const string &glslCode);
 public:
-    Shader(const string &glslCode);
+    Shader(const string &path);
     void setFloat(const string &name, float value) const;
 
     void setInt(const string &name, int value) const;
@@ -52,8 +52,6 @@ class ElementBuffer
         void bind() const;
         void unbind() const;
 };
-
-
 
 
 struct VertexBufferElement
@@ -108,14 +106,10 @@ class VertexArray
 class Texture{
     private:
         unsigned int m_texture;
-        int m_unit = 0;
         int m_width;
         int m_height;
     public:
         Texture(const string &path);
         ~Texture();
         void bind(int unit);
-        void unbind();
 };
-
-string readShaderSource(const string &path);

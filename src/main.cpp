@@ -1,10 +1,8 @@
 #include "core/defines.hpp"
-#include "core/logger.hpp"
-#include "core/math.hpp"
 #include "platform/platform.hpp"
-#include <glad/glad.h>
 #include "render/backend.hpp"
 #include "render/shapes.hpp"
+#include "core/math.hpp"
 
 
 int main(int argc, char const *argv[])
@@ -29,17 +27,14 @@ int main(int argc, char const *argv[])
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Shaders
-    string basicSource = readShaderSource("res/shaders/basic.glsl");
-    Shader basicShader(basicSource);
+    Shader basicShader("res/shaders/basic.glsl");
+    Shader nodeShader("res/shaders/node.glsl");
+    Shader nodeShadowShader("res/shaders/node_shadow.glsl");
+    Shader nodeConnectorShader("res/shaders/node_connector.glsl");
+    Shader basicTextureShader("res/shaders/basic_texture.glsl");
 
-    string nodeSource = readShaderSource("res/shaders/node.glsl");
-    Shader nodeShader(nodeSource);
-
-    string nodeShadowSource = readShaderSource("res/shaders/node_shadow.glsl");
-    Shader nodeShadowShader(nodeShadowSource);
-
-    string nodeConnectorSource = readShaderSource("res/shaders/node_connector.glsl");
-    Shader nodeConnectorShader(nodeConnectorSource);
+    // Textures
+    Texture robotoTexture("res/fonts/roboto_regular.png");
 
     // Shapes
     Shapes &shapes = Shapes::getInstance();
@@ -143,6 +138,14 @@ int main(int argc, char const *argv[])
         shapes.drawQuad();
 
         // text rendering
+        trans = identity<4>();
+        trans = scale(trans, vec3(512, 512, 1));
+        trans = translate(trans, vec3(width/2, height/2, 0));
+        basicTextureShader.use();
+        basicTextureShader.setMat4("projection", pmat);
+        basicTextureShader.setMat4("transform", trans);
+        robotoTexture.bind(0);
+        shapes.drawQuad();
         
 
         // End drawing

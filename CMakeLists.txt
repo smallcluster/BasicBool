@@ -7,8 +7,6 @@ project(BasicBool)
 add_executable(
     ${PROJECT_NAME}
     src/main.cpp
-    src/nodes.hpp
-    src/nodes.cpp
     
     # PLATFORM
     src/platform/platform.hpp
@@ -19,18 +17,14 @@ add_executable(
     src/core/logger.hpp
     src/core/defines.hpp
     src/core/math.hpp
-    src/core/image.hpp
-    src/core/image.cpp
 
     # RENDER
     src/render/backend.hpp
     src/render/backend.cpp
     src/render/shapes.hpp
     src/render/shapes.cpp
-    src/render/text.hpp
-    src/render/text.cpp
-
-    # NODES
+    #src/render/text.hpp
+    #src/render/text.cpp
 
 )
 
@@ -62,6 +56,6 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC external/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
-#target_include_directories(${PROJECT_NAME} PUBLIC external/glad/include)
 
+target_include_directories(${PROJECT_NAME} PUBLIC external/stb)
 
