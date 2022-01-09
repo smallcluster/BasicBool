@@ -104,11 +104,13 @@ class VertexArray
         void unbind() const;
 };
 
-// TODO
+// TODO : implementation
 class Texture{
     private:
         unsigned int m_texture;
         int m_unit = 0;
+        int m_width;
+        int m_height;
     public:
         Texture(const string &path);
         ~Texture();
