@@ -33,6 +33,7 @@ int main(int argc, char const *argv[])
     Shader nodeShadowShader("node_shadow");
     Shader nodeConnectorShader("node_connector");
     Shader basicTextureShader("basic_texture");
+    Shader textShader("text");
 
     // Textures
     Texture robotoTexture("res/fonts/roboto_regular.png");
@@ -141,7 +142,7 @@ int main(int argc, char const *argv[])
         nodeConnectorShader.setVec3("insideColor", vec3(0));
         shapes.drawQuad();
 
-        // text rendering
+        // texture test
         trans = identity<4>();
         trans = scale(trans, vec3(512, 512, 1));
         trans = translate(trans, vec3(width/2, height/2, 0));
@@ -150,7 +151,14 @@ int main(int argc, char const *argv[])
         basicTextureShader.setMat4("transform", trans);
         robotoTexture.bind(0);
         shapes.drawQuad();
-        
+
+        // Text rendering
+
+        robotoFont.text("C'est un test, couleur 1", vec2(cx, cy), 32, vec3(1.0f));
+        robotoFont.text("C'est un test 2, couleur 1", vec2(cx, cy+50), 32, vec3(1.0f));
+        robotoFont.text("C'est un test 3, couleur 2", vec2(cx, cy+100), 32, vec3(1, 0, 0));
+        robotoFont.text("C'est un test 4, couleur 2", vec2(cx, cy+150), 32, vec3(1, 0, 0));
+        robotoFont.render(textShader, pmat);
 
         // End drawing
         platform.swapBuffers();

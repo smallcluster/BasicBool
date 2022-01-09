@@ -96,43 +96,44 @@ float Font::getSize(){return m_size;}
 float Font::getLigneHeight(){return m_lineHeight;}
 vec4 Font::getPadding(){return m_padding;}
 
-void Font::text(const string &textString, vec2 position, float size){
+void Font::text(const string &textString, vec2 position, float size, vec3 color){
     Text t;
     t.fontSize = size;
     t.position = position;
     t.textString = textString;
-    m_txt.push_back(t);
+    t.color = color;
+    m_data[color].push_back(t);
 }
 
-// TODO : implement
-void Font::render(){
+void Font::render(Shader &shader, const mat4 &projection){
 
-    
-    std::vector<float> data;
+    shader.use();
+    shader.setMat4("projection", projection);
 
-    for(int i=0; i < m_txt.size(); i++){
-        
+    for(const auto &drawcall : m_data){
+
         // build geometry
-        vec2 pos = m_txt[i].position;
-        float size = m_txt[i].fontSize;
-        string s = m_txt[i].textString;
+        std::vector<float> data;
+        for(const auto &txt : drawcall.second){
+            vec2 pos = txt.position;
+            float size = txt.fontSize;
+            string s = txt.textString;
 
-        for(std::string::size_type j=0; j < s.size(); j++){
-            char c = s[i];
-            Glyph g = m_glyphs[c];
+            // TODO : build rect for each glyph
+            for(std::string::size_type j=0; j < s.size(); j++){
+                char c = s[j];
+                Glyph g = m_glyphs[c];
+            }
         }
-
+        
+        VertexArray vao;
+        VertexBuffer vbo(&data[0], sizeof(float)*data.size());
+        VertexBufferLayout layout;
+        layout.push<float>(2); // pos
+        layout.push<float>(2); // uv
+        vao.addBuffer(vbo, layout);
+        shader.setVec3("color", drawcall.first);
+        m_texture.bind(0);
+        glDrawArrays(GL_TRIANGLES, 0, data.size()/4);
     }
-
-    VertexArray vao;
-    VertexBuffer vbo(&data[0], sizeof(float)*data.size());
-    VertexBufferLayout layout;
-    layout.push<float>(2); // pos
-    layout.push<float>(2); // uv
-    vao.addBuffer(vbo, layout);
-
-    m_texture.bind(0);
-    glDrawArrays(GL_TRIANGLES, 0, data.size()/4);
-
-
 }
