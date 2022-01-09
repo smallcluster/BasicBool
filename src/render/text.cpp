@@ -3,6 +3,8 @@
 #include <map>
 
 
+// ---- PARSERFNT ----
+
 ParserFnt::ParserFnt(const string &path) : m_file(path){}
 
 std::vector<string> split(const string &s, char c){
@@ -44,13 +46,12 @@ bool ParserFnt::nextLine(std::pair<string, std::map<string, string>> &line){
     return false;
 }
 
+// ---- FONT ---
 
-Font::Font(const string& name) : m_texture("res/fonts/"+name+".png") {
+Font::Font(const string &name) : m_texture("res/fonts/"+name+".png") {
     string path = "res/fonts/"+name+".fnt";
     LOGDEBUG("loading font : {}", path);
-
     ParserFnt parser(path);
-
     // Lecture ligne par ligne
     std::pair<string, std::map<string, string>> line;
     while(parser.nextLine(line)){
@@ -67,10 +68,6 @@ Font::Font(const string& name) : m_texture("res/fonts/"+name+".png") {
 
         } else if(line.first == "common"){
             m_lineHeight = std::stof(line.second["lineHeight"]);
-
-            m_textureDim.x = std::stof(line.second["scaleW"]);
-            m_textureDim.y = std::stof(line.second["scaleH"]);
-
         } else if(line.first == "char"){
             Glyph glyph;
             glyph.id = std::stoi(line.second["id"]);
@@ -90,4 +87,52 @@ Font::Font(const string& name) : m_texture("res/fonts/"+name+".png") {
             break;
         }
     }
+}
+
+std::map<char, Glyph> &Font::getGlyphs(){return m_glyphs;}
+
+string Font::getName(){return m_name;}
+float Font::getSize(){return m_size;}
+float Font::getLigneHeight(){return m_lineHeight;}
+vec4 Font::getPadding(){return m_padding;}
+
+void Font::text(const string &textString, vec2 position, float size){
+    Text t;
+    t.fontSize = size;
+    t.position = position;
+    t.textString = textString;
+    m_txt.push_back(t);
+}
+
+// TODO : implement
+void Font::render(){
+
+    
+    std::vector<float> data;
+
+    for(int i=0; i < m_txt.size(); i++){
+        
+        // build geometry
+        vec2 pos = m_txt[i].position;
+        float size = m_txt[i].fontSize;
+        string s = m_txt[i].textString;
+
+        for(std::string::size_type j=0; j < s.size(); j++){
+            char c = s[i];
+            Glyph g = m_glyphs[c];
+        }
+
+    }
+
+    VertexArray vao;
+    VertexBuffer vbo(&data[0], sizeof(float)*data.size());
+    VertexBufferLayout layout;
+    layout.push<float>(2); // pos
+    layout.push<float>(2); // uv
+    vao.addBuffer(vbo, layout);
+
+    m_texture.bind(0);
+    glDrawArrays(GL_TRIANGLES, 0, data.size()/4);
+
+
 }

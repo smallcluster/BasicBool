@@ -66,8 +66,9 @@ std::vector<string> Shader::splitShaderSources(const string &glslCode)
     return shaderCodes;
 }
 
-Shader::Shader(const string &path)
+Shader::Shader(const string &name)
 {
+    string path = "res/shaders/"+name+".glsl";
     LOGDEBUG("Loading shader : {}", path);
     std::ifstream t(path);
     std::stringstream buffer;

@@ -23,8 +23,8 @@ add_executable(
     src/render/backend.cpp
     src/render/shapes.hpp
     src/render/shapes.cpp
-    #src/render/text.hpp
-    #src/render/text.cpp
+    src/render/text.hpp
+    src/render/text.cpp
 
 )
 

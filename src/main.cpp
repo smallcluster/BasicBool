@@ -3,6 +3,7 @@
 #include "render/backend.hpp"
 #include "render/shapes.hpp"
 #include "core/math.hpp"
+#include "render/text.hpp"
 
 
 int main(int argc, char const *argv[])
@@ -27,14 +28,17 @@ int main(int argc, char const *argv[])
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Shaders
-    Shader basicShader("res/shaders/basic.glsl");
-    Shader nodeShader("res/shaders/node.glsl");
-    Shader nodeShadowShader("res/shaders/node_shadow.glsl");
-    Shader nodeConnectorShader("res/shaders/node_connector.glsl");
-    Shader basicTextureShader("res/shaders/basic_texture.glsl");
+    Shader basicShader("basic");
+    Shader nodeShader("node");
+    Shader nodeShadowShader("node_shadow");
+    Shader nodeConnectorShader("node_connector");
+    Shader basicTextureShader("basic_texture");
 
     // Textures
     Texture robotoTexture("res/fonts/roboto_regular.png");
+
+    // Font
+    Font robotoFont("roboto_regular");
 
     // Shapes
     Shapes &shapes = Shapes::getInstance();
