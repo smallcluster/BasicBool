@@ -8,5 +8,6 @@ ImageFormat Image::getFormat(){return m_imageFormat;}
 
 // TODO : implement loading 8bit RGB/RGBA PNG only
 Image Image::loadPNG(const string & path){
-
+    LOGDEBUG("Loading image : {}", path);
+    
 }
