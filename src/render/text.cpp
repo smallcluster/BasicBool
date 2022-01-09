@@ -110,7 +110,7 @@ void Font::render(Shader &shader, const mat4 &projection){
     shader.use();
     shader.setMat4("projection", projection);
 
-    for(const auto &drawcall : m_data){
+    for(auto &drawcall : m_data){
 
         // build geometry
         std::vector<float> data;
@@ -125,7 +125,9 @@ void Font::render(Shader &shader, const mat4 &projection){
                 Glyph g = m_glyphs[c];
             }
         }
-        
+
+        drawcall.second.clear(); // remove all draw calls for this color.
+
         VertexArray vao;
         VertexBuffer vbo(&data[0], sizeof(float)*data.size());
         VertexBufferLayout layout;
@@ -135,5 +137,7 @@ void Font::render(Shader &shader, const mat4 &projection){
         shader.setVec3("color", drawcall.first);
         m_texture.bind(0);
         glDrawArrays(GL_TRIANGLES, 0, data.size()/4);
+
+        
     }
 }
