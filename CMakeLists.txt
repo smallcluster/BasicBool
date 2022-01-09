@@ -26,6 +26,7 @@ add_executable(
     src/render/shapes.hpp
     src/render/shapes.cpp
     src/render/text.hpp
+    src/render/text.cpp
 
     # NODES
 

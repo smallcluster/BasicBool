@@ -2,8 +2,16 @@
 #include "backend.hpp"
 #include "core/math.hpp"
 #include <map>
+#include <fstream>
 
 // TODO : All
+class ParserFnt{
+    private:
+        std::fstream m_file;
+    public:
+        ParserFnt(const string & path);
+        bool nextLine(std::pair<string, std::map<string, string>> &line); // <type, params->value>
+};
 
 struct Glyph {
     char id;
@@ -17,40 +25,34 @@ class Font {
     private:
         string m_name;
         Texture m_texture;
-        float m_ascent, m_descent;
+        float m_size;
+        float m_lineHeight;
+        vec2 m_textureDim;
+        vec4 m_padding;
         std::map<char, Glyph> m_glyphs;
     public:
-        Font(const string &path);
-        ~Font();
-        float getHeight();
-        float getWidth(const string &textString);
+        Font(const string &name);
+        Texture &getTexture();
 };
 
-class Text {
-    private:
-        // Text settings
-        string m_textString;
-        float m_fontSize;
-        vec3 m_color;
-        Font m_font;
-        vec2 m_position;
-
-        // OpenGL stuff
-        VertexArray m_vao;
-        VertexBuffer m_vbo;
-        ElementBuffer m_ebo;
-
-    public:
-        Text(Font font, const string &textString, vec2 position);
-        void draw();
-        ~Text();
+struct Text {
+    string textString;
+    float fontSize;
+    vec3 color;
+    vec2 position;
 };
-
 
 class TextRenderer{
+    protected:
+        TextRenderer(TextRenderer &other);
+        ~TextRenderer();
+        TextRenderer();
+        void operator=(const TextRenderer & other);
+
     private:
-        static std::map<Font, Text> m_data;
+        std::map<Font, Text> m_data;
     public:
-        static void text(const string &textString, vec2 position, float size, Font font);
-        static void render();
+        static TextRenderer &getInstance();
+        void text(const string &textString, vec2 position, float size, Font font);
+        void render();
 };

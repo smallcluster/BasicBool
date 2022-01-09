@@ -2,6 +2,7 @@
 
 #include <string>
 using std::string;
+#include "logger.hpp"
 
 #if defined(_WIN32)
     #define PLATFORM_WINDOWS 1
