@@ -3,8 +3,6 @@
 #include "core/math.hpp"
 #include <map>
 #include <fstream>
-
-// TODO : All
 class ParserFnt{
     private:
         std::fstream m_file;
@@ -21,38 +19,28 @@ struct Glyph {
     float advance;
 };
 
+struct Text {
+    string textString;
+    float fontSize;
+    vec2 position;
+};
 class Font {
     private:
         string m_name;
         Texture m_texture;
         float m_size;
         float m_lineHeight;
-        vec2 m_textureDim;
         vec4 m_padding;
         std::map<char, Glyph> m_glyphs;
+        std::vector<Text> m_txt;
     public:
         Font(const string &name);
         Texture &getTexture();
-};
-
-struct Text {
-    string textString;
-    float fontSize;
-    vec3 color;
-    vec2 position;
-};
-
-class TextRenderer{
-    protected:
-        TextRenderer(TextRenderer &other);
-        ~TextRenderer();
-        TextRenderer();
-        void operator=(const TextRenderer & other);
-
-    private:
-        std::map<Font, Text> m_data;
-    public:
-        static TextRenderer &getInstance();
-        void text(const string &textString, vec2 position, float size, Font font);
+        std::map<char, Glyph> &getGlyphs();
+        string getName();
+        float getSize();
+        float getLigneHeight();
+        vec4 getPadding();
+        void text(const string &textString, vec2 position, float size);
         void render();
 };

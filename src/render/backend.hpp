@@ -12,7 +12,7 @@ private:
     GLuint m_program;
     std::vector<string> splitShaderSources(const string &glslCode);
 public:
-    Shader(const string &path);
+    Shader(const string &name);
     void setFloat(const string &name, float value) const;
 
     void setInt(const string &name, int value) const;
@@ -102,7 +102,6 @@ class VertexArray
         void unbind() const;
 };
 
-// TODO : implementation
 class Texture{
     private:
         unsigned int m_texture;
