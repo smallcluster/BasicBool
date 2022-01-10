@@ -111,4 +111,6 @@ class Texture{
         Texture(const string &path);
         ~Texture();
         void bind(int unit);
+        int getWidth();
+        int getHeight();
 };

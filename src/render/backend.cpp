@@ -242,6 +242,7 @@ inline unsigned int VertexBufferLayout::getStride() const {return m_stride;}
 
 VertexArray::VertexArray() {
     glGenVertexArrays(1, &m_vao);
+    glBindVertexArray(m_vao);
 }
 VertexArray::~VertexArray() {
     glDeleteVertexArrays(1, &m_vao);
@@ -309,3 +310,6 @@ void Texture::bind(int unit){
     glActiveTexture(GL_TEXTURE0+unit);
     glBindTexture(GL_TEXTURE_2D, m_texture);
 }
+
+int Texture::getWidth(){return m_width;}
+int Texture::getHeight(){return m_height;}

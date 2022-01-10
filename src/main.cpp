@@ -20,11 +20,12 @@ int main(int argc, char const *argv[])
 
     // Opengl Setup
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);
+    glDisable(GL_STENCIL_TEST);
     //glEnable(GL_DEPTH_TEST);
     //glEnable(GL_STENCIL_TEST);
 
     glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Shaders
@@ -33,13 +34,10 @@ int main(int argc, char const *argv[])
     Shader nodeShadowShader("node_shadow");
     Shader nodeConnectorShader("node_connector");
     Shader basicTextureShader("basic_texture");
-    Shader textShader("text");
-
-    // Textures
-    Texture robotoTexture("res/fonts/roboto_regular.png");
+    Shader textShader("text_sdf");
 
     // Font
-    Font robotoFont("roboto_regular");
+    Font font("roboto_regular_sdf");
 
     // Shapes
     Shapes &shapes = Shapes::getInstance();
@@ -91,16 +89,24 @@ int main(int argc, char const *argv[])
         glDrawArrays(GL_LINES, 0, 2*(nx+ny+2));
 
 
+        vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        
+
+
         // ---- NODE TEST ---- //
+
+        string headerText = "NOT";
+        float headerTextSize = 32;
 
         float cx = platform.getMouseX();
         float cy = platform.getMouseY();
-        float w = 139;
-        float headerHeight = 31;
-        float bodyHeight = 57;
-        float h = headerHeight+bodyHeight;
         float r = 8;
         float s = 16;
+        float w = font.getWidth(headerText, headerTextSize)+2*r;
+        float headerHeight = font.getHeight(headerText, headerTextSize)+r;
+        float bodyHeight = 57;
+        float h = headerHeight+bodyHeight;
+        
 
         // Shadow
         mat4 trans = identity<4>();
@@ -142,23 +148,14 @@ int main(int argc, char const *argv[])
         nodeConnectorShader.setVec3("insideColor", vec3(0));
         shapes.drawQuad();
 
-        // texture test
-        trans = identity<4>();
-        trans = scale(trans, vec3(512, 512, 1));
-        trans = translate(trans, vec3(width/2, height/2, 0));
-        basicTextureShader.use();
-        basicTextureShader.setMat4("projection", pmat);
-        basicTextureShader.setMat4("transform", trans);
-        robotoTexture.bind(0);
-        shapes.drawQuad();
-
         // Text rendering
+        font.text(headerText, vec2(cx-w/2+8, cy-h/2+8), headerTextSize, vec3(1));
 
-        robotoFont.text("C'est un test, couleur 1", vec2(cx, cy), 32, vec3(1.0f));
-        robotoFont.text("C'est un test 2, couleur 1", vec2(cx, cy+50), 32, vec3(1.0f));
-        robotoFont.text("C'est un test 3, couleur 2", vec2(cx, cy+100), 32, vec3(1, 0, 0));
-        robotoFont.text("C'est un test 4, couleur 2", vec2(cx, cy+150), 32, vec3(1, 0, 0));
-        robotoFont.render(textShader, pmat);
+        font.text("In", vec2(cx-w/2.0f+dr/2.0f+16, cy-h/2.0f+headerHeight+dr/2.0f), headerTextSize/3, vec3(1));
+
+        textShader.use();
+        textShader.setMat4("projection", pmat);
+        font.render();
 
         // End drawing
         platform.swapBuffers();
