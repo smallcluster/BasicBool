@@ -12,19 +12,19 @@
 
 // Windows specific opengl definitions
 // https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_create_context.txt
-// 
+//
 #define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
-#define WGL_CONTEXT_FLAGS_ARB         0x2094
-#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
-typedef HGLRC (WINAPI * PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC, HGLRC hShareContext, const int *attribList);
-typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
+#define WGL_CONTEXT_FLAGS_ARB 0x2094
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x0002
+typedef HGLRC(WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC hDC, HGLRC hShareContext, const int *attribList);
+typedef BOOL(WINAPI *PFNWGLSWAPINTERVALEXTPROC)(int interval);
 
 struct Win32State
 {
     HINSTANCE hInstance = nullptr;
     HWND handle = nullptr;
-    HDC hDC = nullptr; // Device context
+    HDC hDC = nullptr;    // Device context
     HGLRC glrc = nullptr; // OpenGl context
     bool shouldClose = false;
     int width, height;
@@ -63,7 +63,8 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
         GetClientRect(hwnd, &newRect);
         win32State.width = newRect.right - newRect.left;
         win32State.height = newRect.bottom - newRect.top;
-    }break;
+    }
+    break;
 
     case WM_SIZING:
     {
@@ -71,7 +72,8 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
         GetClientRect(hwnd, &newRect);
         win32State.width = newRect.right - newRect.left;
         win32State.height = newRect.bottom - newRect.top;
-    }break;
+    }
+    break;
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
@@ -185,23 +187,23 @@ Platform::Platform(const string &name, int width, int height)
     // --- Setting up OpenGL context ---
     win32State.hDC = GetDC(win32State.handle);
 
-    PIXELFORMATDESCRIPTOR pfd = { };
+    PIXELFORMATDESCRIPTOR pfd = {};
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
     pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
     pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32; // color depth (in bits)
-    pfd.cDepthBits = 24; // depth buffer precision (int bits)
+    pfd.cColorBits = 32;  // color depth (in bits)
+    pfd.cDepthBits = 24;  // depth buffer precision (int bits)
     pfd.cStencilBits = 8; // stencil buffer ALWAYS 8
     pfd.iLayerType = PFD_MAIN_PLANE;
 
     int nPixelFormat = ChoosePixelFormat(win32State.hDC, &pfd);
-    if(nPixelFormat == 0)
+    if (nPixelFormat == 0)
     {
         MessageBoxA(0, "Failed to choose pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to choose pixel format.");
         return;
     }
-    if(!SetPixelFormat(win32State.hDC, nPixelFormat, &pfd))
+    if (!SetPixelFormat(win32State.hDC, nPixelFormat, &pfd))
     {
         MessageBoxA(0, "Failed to set pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to set pixel format.");
@@ -217,12 +219,11 @@ Platform::Platform(const string &name, int width, int height)
         WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
         WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        0
-    };
+        0};
 
     // As we have setup an OpenGL context earlier, we can now retrive the necessary functions to create an OpenGL 3 context.
     PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-    if(wglCreateContextAttribsARB)
+    if (wglCreateContextAttribsARB)
     {
         win32State.glrc = wglCreateContextAttribsARB(win32State.hDC, NULL, attributes); // Create Opengl 3.x context
         // Remove dummy context
@@ -230,9 +231,11 @@ Platform::Platform(const string &name, int width, int height)
         wglDeleteContext(dummyOpenGLContext);
         wglMakeCurrent(win32State.hDC, win32State.glrc);
 
-        PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
+        PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
         wglSwapIntervalEXT(0); // VSYNC not locked to 60 fps
-    } else {
+    }
+    else
+    {
         MessageBoxA(0, "Can't create OpenGL 3 context !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Can't create OpenGL 3 context !");
         return;
@@ -266,11 +269,13 @@ void Platform::swapBuffers()
     SwapBuffers(win32State.hDC);
 }
 
-int Platform::getMouseX(){
+int Platform::getMouseX()
+{
     return win32State.mouseX;
 }
 
-int Platform::getMouseY(){
+int Platform::getMouseY()
+{
     return win32State.mouseY;
 }
 

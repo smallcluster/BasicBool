@@ -5,12 +5,12 @@
 #include <glad/glad.h>
 #include <vector>
 
-
 class Shader
 {
 private:
     GLuint m_program;
     std::vector<string> splitShaderSources(const string &glslCode);
+
 public:
     Shader(const string &name);
     void setFloat(const string &name, float value) const;
@@ -26,33 +26,33 @@ public:
     void setMat4(const string &name, const mat4 &m) const;
     void setMat3(const string &name, const mat3 &m) const;
 
-
     ~Shader();
     void use();
 };
 
 class VertexBuffer
 {
-    private:
-        GLuint m_vbo;
-    public:
-        VertexBuffer(const void *data, unsigned int size);
-        ~VertexBuffer();
-        void bind() const;
-        void unbind() const;
+private:
+    GLuint m_vbo;
+
+public:
+    VertexBuffer(const void *data, unsigned int size);
+    ~VertexBuffer();
+    void bind() const;
+    void unbind() const;
 };
 
 class ElementBuffer
 {
-    private:
-        GLuint m_ebo;
-    public:
-        ElementBuffer(const void *data, unsigned int size);
-        ~ElementBuffer();
-        void bind() const;
-        void unbind() const;
-};
+private:
+    GLuint m_ebo;
 
+public:
+    ElementBuffer(const void *data, unsigned int size);
+    ~ElementBuffer();
+    void bind() const;
+    void unbind() const;
+};
 
 struct VertexBufferElement
 {
@@ -65,52 +65,55 @@ struct VertexBufferElement
 
 class VertexBufferLayout
 {
-    private:
-        std::vector<VertexBufferElement> m_elements;
-        unsigned int m_stride;
-    public:
-        VertexBufferLayout();
+private:
+    std::vector<VertexBufferElement> m_elements;
+    unsigned int m_stride;
 
-        template<typename T>
-        void push(unsigned int count)
-        {
-            LOGERROR("VertexBufferLayout::push() -> unknow type");
-        }
+public:
+    VertexBufferLayout();
 
-        template<>
-        void push<float>(unsigned int count)
-        {
-            m_elements.push_back({GL_FLOAT, count, GL_FALSE});
-            m_stride += VertexBufferElement::getTypeSize(GL_FLOAT) * count;
-        }
+    template <typename T>
+    void push(unsigned int count)
+    {
+        LOGERROR("VertexBufferLayout::push() -> unknow type");
+    }
 
-        inline const std::vector<VertexBufferElement>& getElements() const;
-        inline unsigned int getStride() const;
+    template <>
+    void push<float>(unsigned int count)
+    {
+        m_elements.push_back({GL_FLOAT, count, GL_FALSE});
+        m_stride += VertexBufferElement::getTypeSize(GL_FLOAT) * count;
+    }
 
+    inline const std::vector<VertexBufferElement> &getElements() const;
+    inline unsigned int getStride() const;
 };
 
 class VertexArray
 {
-    private:
-        GLuint m_vao;
-    public:
-        VertexArray();
-        ~VertexArray();
-        void addBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
-        void addBuffer(const ElementBuffer& ebo);
-        void bind() const;
-        void unbind() const;
+private:
+    GLuint m_vao;
+
+public:
+    VertexArray();
+    ~VertexArray();
+    void addBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout);
+    void addBuffer(const ElementBuffer &ebo);
+    void bind() const;
+    void unbind() const;
 };
 
-class Texture{
-    private:
-        unsigned int m_texture;
-        int m_width;
-        int m_height;
-    public:
-        Texture(const string &path);
-        ~Texture();
-        void bind(int unit);
-        int getWidth();
-        int getHeight();
+class Texture
+{
+private:
+    unsigned int m_texture;
+    int m_width;
+    int m_height;
+
+public:
+    Texture(const string &path);
+    ~Texture();
+    void bind(int unit);
+    int getWidth();
+    int getHeight();
 };

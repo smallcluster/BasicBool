@@ -158,11 +158,11 @@ float Font::getWidth(const string &text, float size)
         else
             g = m_glyphs[c];
 
-        lastAdvance = g.advance* scale;
+        lastAdvance = g.advance * scale;
         lastWidth = g.dim.x * scale;
         x += lastAdvance;
     }
-    widths.push_back(x-lastAdvance+lastWidth);
+    widths.push_back(x - lastAdvance + lastWidth);
     float max = widths[0];
     for (float w : widths)
         if (w > max)
@@ -227,10 +227,10 @@ void Font::render()
             // build quad for this char
 
             // pos
-            vec2 p0 = pos + (g.offset-m_padding.xy) * scale;
-            vec2 p1 = p0 + vec2(g.dim.x+2*m_padding.x, 0) * scale;
-            vec2 p2 = p0 + (vec2(g.dim.x, g.dim.y)+2*m_padding.xy) * scale;
-            vec2 p3 = p0 + vec2(0, g.dim.y+2*m_padding.y) * scale;
+            vec2 p0 = pos + (g.offset - m_padding.xy) * scale;
+            vec2 p1 = p0 + vec2(g.dim.x + 2 * m_padding.x, 0) * scale;
+            vec2 p2 = p0 + (vec2(g.dim.x, g.dim.y) + 2 * m_padding.xy) * scale;
+            vec2 p3 = p0 + vec2(0, g.dim.y + 2 * m_padding.y) * scale;
 
             // uvs
             vec2 u0 = vec2(g.pos.x, g.pos.y);

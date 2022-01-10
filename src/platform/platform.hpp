@@ -6,7 +6,7 @@
 #include "core/defines.hpp"
 
 class Platform
-{ 
+{
 protected:
     Platform(Platform &other);
     void operator=(const Platform &);
