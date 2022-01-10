@@ -33,7 +33,7 @@ class Font {
         float m_lineHeight;
         vec4 m_padding;
         std::map<char, Glyph> m_glyphs;
-        std::map<vec3, std::vector<Text>> m_data;
+        std::vector<Text> m_texts;
     public:
         Font(const string &name);
         Texture &getTexture();

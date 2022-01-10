@@ -102,42 +102,37 @@ void Font::text(const string &textString, vec2 position, float size, vec3 color)
     t.position = position;
     t.textString = textString;
     t.color = color;
-    m_data[color].push_back(t);
+    m_texts.push_back(t);
 }
 
 void Font::render(Shader &shader, const mat4 &projection){
 
     shader.use();
     shader.setMat4("projection", projection);
+    // build geometry
+    std::vector<float> data;
 
-    for(auto &drawcall : m_data){
+    for(const auto &txt : m_texts){
+        vec2 pos = txt.position;
+        float size = txt.fontSize;
+        string s = txt.textString;
+        vec3 color = txt.color;
 
-        // build geometry
-        std::vector<float> data;
-        for(const auto &txt : drawcall.second){
-            vec2 pos = txt.position;
-            float size = txt.fontSize;
-            string s = txt.textString;
-
-            // TODO : build rect for each glyph
-            for(std::string::size_type j=0; j < s.size(); j++){
-                char c = s[j];
-                Glyph g = m_glyphs[c];
-            }
+        // TODO : build rect for each glyph
+        for(std::string::size_type j=0; j < s.size(); j++){
+            char c = s[j];
+            Glyph g = m_glyphs[c];
         }
-
-        drawcall.second.clear(); // remove all draw calls for this color.
-
-        VertexArray vao;
-        VertexBuffer vbo(&data[0], sizeof(float)*data.size());
-        VertexBufferLayout layout;
-        layout.push<float>(2); // pos
-        layout.push<float>(2); // uv
-        vao.addBuffer(vbo, layout);
-        shader.setVec3("color", drawcall.first);
-        m_texture.bind(0);
-        glDrawArrays(GL_TRIANGLES, 0, data.size()/4);
-
         
     }
+    VertexArray vao;
+    VertexBuffer vbo(&data[0], sizeof(float)*data.size());
+    VertexBufferLayout layout;
+    layout.push<float>(2); // pos
+    layout.push<float>(2); // uv
+    layout.push<float>(3); // color
+    vao.addBuffer(vbo, layout);
+    m_texture.bind(0);
+    glDrawArrays(GL_TRIANGLES, 0, data.size()/7);
+    m_texts.clear(); // remove all draw calls
 }
