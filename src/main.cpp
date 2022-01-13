@@ -54,8 +54,14 @@ int main(int argc, char const *argv[])
         int delta = platform.getMouseWheel();
         size += delta*0.1f;
 
+        // View matrix
+        mat4 view = identity<4>();
+        view = scale(view, size);
+        view = translate(view, vec3(width/2.0f*(1-size), height/2.0f*(1-size), 0));
+
         // Projection matrix
-        mat4 pmat(vec4(2.0f / width*size, 0, 0, 0), vec4(0, -2.0f / height*size, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+        mat4 pmat(vec4(2.0f / width, 0, 0, 0), vec4(0, -2.0f / height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+        pmat = pmat*view;
 
         glViewport(0, 0, width, height);
 
