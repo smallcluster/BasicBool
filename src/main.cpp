@@ -91,8 +91,8 @@ int main(int argc, char const *argv[])
 
         // ---- NODE TEST ---- //
 
-        string headerText = "NOT";
-        float headerTextSize = 32;
+        string headerText = "NOT node test BIG 00";
+        float headerTextSize = 18;
 
         float cx = platform.getMouseX();
         float cy = platform.getMouseY();
@@ -146,7 +146,7 @@ int main(int argc, char const *argv[])
         // Text rendering
         font.text(headerText, vec2(cx - w / 2 + 8, cy - h / 2 + 8), headerTextSize, vec3(1));
 
-        font.text("In", vec2(cx - w / 2.0f + dr / 2.0f + 16, cy - h / 2.0f + headerHeight + dr / 2.0f), headerTextSize / 3, vec3(1));
+        font.text("In", vec2(cx - w / 2.0f + dr / 2.0f + 16, cy - h / 2.0f + headerHeight + dr / 2.0f), 12, vec3(1));
 
         textShader.use();
         textShader.setMat4("projection", pmat);
