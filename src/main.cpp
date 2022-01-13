@@ -5,6 +5,7 @@
 #include "core/math.hpp"
 #include "render/text.hpp"
 
+
 int main(int argc, char const *argv[])
 {
     // Math vector & matrix packing check
@@ -40,13 +41,21 @@ int main(int argc, char const *argv[])
     // Shapes
     Shapes &shapes = Shapes::getInstance();
 
+
+    // projection size
+    float size = 1.0;
+
     while (platform.processEvents())
     {
         int width = platform.getWidth();
         int height = platform.getHeight();
 
+        vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        int delta = platform.getMouseWheel();
+        size += delta*0.1f;
+
         // Projection matrix
-        mat4 pmat(vec4(2.0f / width, 0, 0, 0), vec4(0, -2.0f / height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+        mat4 pmat(vec4(2.0f / width*size, 0, 0, 0), vec4(0, -2.0f / height*size, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
 
         glViewport(0, 0, width, height);
 
@@ -87,7 +96,7 @@ int main(int argc, char const *argv[])
         vao.bind();
         glDrawArrays(GL_LINES, 0, 2 * (nx + ny + 2));
 
-        vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        
 
         // ---- NODE TEST ---- //
 

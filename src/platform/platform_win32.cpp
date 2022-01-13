@@ -29,6 +29,7 @@ struct Win32State
     bool shouldClose = false;
     int width, height;
     int mouseX, mouseY;
+    int mouseWheel;  // 0 no change, -1 down, 1 up
 };
 
 static Win32State win32State;
@@ -97,7 +98,7 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
         int delta = GET_WHEEL_DELTA_WPARAM(wParam);
         if (delta != 0)
             delta = delta < 0 ? -1 : 1; // Normalize input for OS-independent use
-        // TODO : handle mouse wheel input
+        win32State.mouseWheel = delta;
     }
     break;
 
@@ -255,6 +256,7 @@ Platform::~Platform()
 
 bool Platform::processEvents()
 {
+    win32State.mouseWheel = 0; // reset wheel delta
     MSG message;
     while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
     {
@@ -277,6 +279,10 @@ int Platform::getMouseX()
 int Platform::getMouseY()
 {
     return win32State.mouseY;
+}
+
+int Platform::getMouseWheel(){
+    return win32State.mouseWheel;
 }
 
 #endif

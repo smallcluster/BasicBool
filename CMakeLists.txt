@@ -26,6 +26,10 @@ add_executable(
     src/render/text.hpp
     src/render/text.cpp
 
+    # NODE
+    #src/node/nodes.hpp
+    #src/node/nodes.cpp
+
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

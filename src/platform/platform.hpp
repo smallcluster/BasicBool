@@ -30,4 +30,5 @@ public:
     int getHeight();
     int getMouseX();
     int getMouseY();
+    int getMouseWheel();
 };

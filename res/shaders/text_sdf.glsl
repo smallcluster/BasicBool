@@ -31,7 +31,7 @@ const float sdfSize = 15;
 // Adapted from : https://drewcassidy.me/2020/06/26/sdf-antialiasing/
 void main(){
     vec4 col = vec4(color, 1);
-    float dist = (width - texture(tex, uv).a)*15;
+    float dist = (width - texture(tex, uv).a)*sdfSize;
     vec2 duv = fwidth(uv);
     float dtex = length(duv*textureSize(tex, 0));
     float pixelDist = dist * 2 / dtex;
