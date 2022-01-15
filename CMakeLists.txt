@@ -27,8 +27,7 @@ add_executable(
     src/render/text.cpp
 
     # NODE
-    #src/node/nodes.hpp
-    #src/node/nodes.cpp
+    src/node/nodes.hpp
 
 )
 
