@@ -167,8 +167,11 @@ class NodeManager {
         }
 
         void draw(Font& font){
+            // TODO : Batch drawing of shadows, node body, connectors and text
             for(Node* n : nodes)
                 n->draw(font);
+
+            // TODO : Batch drawing of lines
             for(Link* li : links)
                 li->draw();
         }
