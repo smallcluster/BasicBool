@@ -4,17 +4,16 @@
 #include <unordered_map>
 #include "render/text.hpp"
 
-
+// TODO : design a widget pattern for mouse interaction and rendering
 
 struct Connector{
     bool state = false;
     string name;
+    vec2 pos;
     Connector(string name) : name(name) {}
-
     // TODO : Draw the connector
     void draw(Font &font);
 };
-
 
 // in -> out
 struct Link {
@@ -28,12 +27,10 @@ struct Link {
     void update(){
         output->state = input->state;
     }
-
     void reset(){
         input->state = false;
         output->state = false;
     }
-
     // TODO : Draw the link
     void draw();
 };
