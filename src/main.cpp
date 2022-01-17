@@ -5,6 +5,9 @@
 #include "core/math.hpp"
 #include "render/text.hpp"
 #include "node/nodes.hpp"
+#include <chrono>
+#include <thread>
+#include <cmath>
 
 
 int main(int argc, char const *argv[])
@@ -69,9 +72,14 @@ int main(int argc, char const *argv[])
     vec2 viewOffset = vec2(0);
     float zoom = 1.0;
 
+    double avgFps = 0;
+    unsigned long long frame = 0;
+
 
     while (platform.processEvents())
     {
+        auto startTime = std::chrono::high_resolution_clock::now();
+
         int width = platform.getWidth();
         int height = platform.getHeight();
 
@@ -134,16 +142,46 @@ int main(int argc, char const *argv[])
         vao.bind();
         glDrawArrays(GL_LINES, 0, 2 * (nx + ny + 2));
 
-        
-
         // ---- NODE TEST ---- //
         NodeManager.simulate();
         NodeManager.render(pmat, view);
 
-        // mouse coords test
+
+        // wait time
+        /*
+        auto endTime = std::chrono::high_resolution_clock::now();
+        long long elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime).count();
+        long long targetTime = 16666/2;
+        long long waitTime = targetTime - elapsedTime;
+        if(waitTime > 0){
+            std::this_thread::sleep_for(std::chrono::microseconds(waitTime));
+        }
+        */
+        auto finalTime = std::chrono::high_resolution_clock::now();
+        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime-startTime).count();
+        int fps = (int) (1000000.0 / finalElapsedTime);
+        string text = std::to_string(fps);
+        font.text("fps : "+text, vec2(0), 20, vec3(1));
+
+        double currentFps = (1000000.0 / finalElapsedTime);
+        if(frame > 1){
+            avgFps = avgFps + (long double) (currentFps-avgFps)/ (long double) frame;
+        } else {
+            avgFps = currentFps;
+        }
+        frame++;
+
+        text = std::to_string((int) avgFps);
+        font.text("avg fps : "+text, vec2(0, 20), 20, vec3(1));
+
+        font.render(pmat);
+        
 
         // End drawing
         platform.swapBuffers();
+
+        
+        
     }
     return 0;
 }

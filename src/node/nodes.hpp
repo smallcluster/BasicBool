@@ -8,10 +8,11 @@
 #include <cmath>
 
 class Node;
-
+struct Link;
 struct Connector
 {
     Node *parent;
+    std::vector<Link*> links;
     bool state = false;
     string name;
     vec2 pos;
@@ -25,10 +26,14 @@ struct Link
     Connector *output;
     Link(Connector *in, Connector *out) : input(in), output(out)
     {
+        in->links.push_back(this);
+        out->links.push_back(this);
     }
     ~Link()
     {
         output->state = false;
+        input->links.erase(std::remove(input->links.begin(), input->links.end(), this), input->links.end());
+        output->links.erase(std::remove(output->links.begin(), output->links.end(), this), output->links.end());
     }
     void update()
     {
@@ -396,10 +401,10 @@ private:
         connectorCalls.clear();
     }
 
+    // TODO : render line with thickness on geometry shader
     void renderLinks(const mat4 &pmat, const mat4 &view){
         if(links.empty())
             return;
-
         std::vector<float> vertices;
         vertices.reserve(links.size()*6);
 
@@ -433,11 +438,11 @@ public:
     }
 
     ~NodeManager(){
-        for(Node* node : nodes)
-            delete node;
-        
+        // LINKS FIRST
         for(Link* link : links)
             delete link;
+        for(Node* node : nodes)
+            delete node;
     }
 
     void addNode(Node* node){
