@@ -181,7 +181,7 @@ void Font::text(const string &textString, vec2 position, float size, vec3 color)
     m_texts.push_back(t);
 }
 
-void Font::render(const mat4 &pmat)
+void Font::render(const mat4 &pmat, const mat4 &view)
 {
     // Nothing to render
     if (m_texts.empty())
@@ -285,6 +285,7 @@ void Font::render(const mat4 &pmat)
     }
     textShader.use();
     textShader.setMat4("projection", pmat);
+    textShader.setMat4("view", view);
 
     m_texture.bind(0);
     VertexArray vao;

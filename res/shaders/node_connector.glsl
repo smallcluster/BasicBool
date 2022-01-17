@@ -6,14 +6,14 @@ layout (location = 2) in float aRadius;
 layout (location = 3) in float aStatus;
 
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 view;
 
 out vec2 uv;
 out float radius;
 out float status;
 
 void main(){
-    gl_Position = projection*transform*vec4(aPos.x, aPos.y, 0.0, 1.0);
+    gl_Position = projection*view*vec4(aPos.x, aPos.y, 0.0, 1.0);
     uv = aUV;
     radius = aRadius;
     status = aStatus;
@@ -28,7 +28,6 @@ in vec2 uv;
 in float radius;
 in float status;
 
-const vec3 emptyColor = vec3(0);
 const vec3 falseColor = vec3(1, 0, 0);
 const vec3 trueColor = vec3(0, 1, 0);
 
@@ -56,16 +55,7 @@ void main(){
     float res2 = step(0., d2);
 
     vec4 col = vec4(0);
-    vec3 insideColor;
-
-    if(status == -1.0)
-        insideColor = emptyColor;
-    else if(status == 1.0)
-        insideColor = trueColor;
-    else
-        insideColor = falseColor;
-
-    col = mix(vec4(insideColor, 1), col, res2);
+    col = mix(vec4((status == 1.0 ? trueColor : falseColor), 1), col, res2);
     col = mix(vec4(1), col, res);
     
     // final result

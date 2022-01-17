@@ -6,14 +6,14 @@ layout (location = 2) in vec2 aSize;
 layout (location = 3) in float aHeaderHeight;
 
 uniform mat4 projection;
-uniform mat4 transform;
+uniform mat4 view;
 
 out vec2 uv;
 out vec2 size;
 out float headerHeight;
 
 void main(){
-    gl_Position = projection*transform*vec4(aPos.x, aPos.y, 0.0, 1.0);
+    gl_Position = projection*view*vec4(aPos.x, aPos.y, 0.0, 1.0);
     uv = aUV;
     size = aSize;
     headerHeight = aHeaderHeight;

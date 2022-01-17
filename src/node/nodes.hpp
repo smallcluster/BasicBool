@@ -13,7 +13,6 @@ struct Connector
 {
     Node *parent;
     bool state = false;
-    bool connected = false;
     string name;
     vec2 pos;
     Connector(string name, Node *parent) : name(name), parent(parent) {}
@@ -26,8 +25,6 @@ struct Link
     Connector *output;
     Link(Connector *in, Connector *out) : input(in), output(out)
     {
-        input->connected = true;
-        output->connected = true;
     }
     ~Link()
     {
@@ -252,7 +249,7 @@ private:
                 // update connector pos
                 c->pos = outletPos;
                 // draw connector
-                connectorCalls.push_back({outletPos, connectorRadius, !(c->connected) ? -1.0f : c->state ? 1.0f : 0.0f, textPos, c->name});
+                connectorCalls.push_back({outletPos, connectorRadius, c->state ? 1.0f : 0.0f, textPos, c->name});
 
                 inOffsetY += totalHeight;
             }
@@ -284,7 +281,7 @@ private:
         }
     }
 
-    void renderShadows(const mat4 &pmat)
+    void renderShadows(const mat4 &pmat, const mat4 &view)
     {
         if(shadowCalls.empty())
             return;
@@ -315,14 +312,14 @@ private:
         vao.addBuffer(ebo);
         nodeShadowShader.use();
         nodeShadowShader.setMat4("projection", pmat);
-        nodeShadowShader.setMat4("transform", identity<4>());
+        nodeShadowShader.setMat4("view", view);
         nodeShadowShader.setFloat("smoothing", shadowSize);
         nodeShadowShader.setFloat("radius", nodeRadius);
         glDrawElements(GL_TRIANGLES, shadowCalls.size() * 6, GL_UNSIGNED_INT, 0);
         shadowCalls.clear();
     }
 
-    void renderNodes(const mat4 &pmat)
+    void renderNodes(const mat4 &pmat, const mat4 &view)
     {
         if(nodeCalls.empty())
             return;
@@ -355,13 +352,13 @@ private:
         vao.addBuffer(ebo);
         nodeShader.use();
         nodeShader.setMat4("projection", pmat);
-        nodeShader.setMat4("transform", identity<4>());
+        nodeShader.setMat4("view", view);
         nodeShader.setFloat("radius", nodeRadius);
         glDrawElements(GL_TRIANGLES, nodeCalls.size() * 6, GL_UNSIGNED_INT, 0);
         nodeCalls.clear();
     }
 
-    void renderConnectors(const mat4 &pmat)
+    void renderConnectors(const mat4 &pmat, const mat4 &view)
     {
         if(connectorCalls.empty())
             return;
@@ -394,12 +391,12 @@ private:
         vao.addBuffer(ebo);
         nodeConnectorShader.use();
         nodeConnectorShader.setMat4("projection", pmat);
-        nodeConnectorShader.setMat4("transform", identity<4>());
+        nodeConnectorShader.setMat4("view", view);
         glDrawElements(GL_TRIANGLES, connectorCalls.size() * 6, GL_UNSIGNED_INT, 0);
         connectorCalls.clear();
     }
 
-    void renderLinks(const mat4 &pmat){
+    void renderLinks(const mat4 &pmat, const mat4 &view){
         if(links.empty())
             return;
 
@@ -422,7 +419,7 @@ private:
         vao.addBuffer(vbo, layout);
         linkShader.use();
         linkShader.setMat4("projection", pmat);
-        linkShader.setMat4("transform", identity<4>());
+        linkShader.setMat4("view", view);
         glDrawArrays(GL_LINES, 0, 2*links.size());
     }
 
@@ -475,15 +472,15 @@ public:
         }
         return false;
     }
-    void render(const mat4 &pmat)
+    void render(const mat4 &pmat, const mat4 &view)
     {
         doNodeLayout();
-        renderShadows(pmat);
-        renderNodes(pmat);
-        renderConnectors(pmat);
-        renderLinks(pmat);
+        renderShadows(pmat, view);
+        renderNodes(pmat, view);
+        renderConnectors(pmat, view);
+        renderLinks(pmat, view);
         // render text
-        font.render(pmat);
+        font.render(pmat, view);
     }
 
     void simulate()

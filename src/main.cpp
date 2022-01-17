@@ -65,25 +65,32 @@ int main(int argc, char const *argv[])
 
 
     // projection size
-    float size = 1.0;
+    vec2 viewOffset = vec2(0);
+    float zoom = 1.0;
+
 
     while (platform.processEvents())
     {
         int width = platform.getWidth();
         int height = platform.getHeight();
 
+
         vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
         int delta = platform.getMouseWheel();
-        size += delta*0.1f;
+
+        zoom += zoom*0.05f*delta;
+        if(zoom < 0.1f)
+            zoom = 0.1f;
+        else if(zoom >= 10)
+            zoom = 10;
 
         // View matrix
-        mat4 view = identity<4>();
-        view = scale(view, size);
-        view = translate(view, vec3(width/2.0f*(1-size), height/2.0f*(1-size), 0));
+        mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
+        view = translate(view, vec3((1-zoom)*width/2.0f, (1-zoom)*height/2.0f, 1));
 
         // Projection matrix
-        mat4 pmat(vec4(2.0f / width, 0, 0, 0), vec4(0, -2.0f / height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
-        pmat = pmat*view;
+        mat4 pmat(vec4( 2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+        pmat = pmat;
 
         glViewport(0, 0, width, height);
 
@@ -118,7 +125,7 @@ int main(int argc, char const *argv[])
 
         basicShader.use();
         basicShader.setMat4("projection", pmat);
-        basicShader.setMat4("transform", identity<4>());
+        basicShader.setMat4("view", view);
         basicShader.setVec3("color", vec3(77.0f / 255.0f));
 
         vao.bind();
@@ -128,7 +135,7 @@ int main(int argc, char const *argv[])
 
         // ---- NODE TEST ---- //
         NodeManager.simulate();
-        NodeManager.render(pmat);
+        NodeManager.render(pmat, view);
 
         // End drawing
         platform.swapBuffers();
