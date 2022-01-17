@@ -74,7 +74,7 @@ bool ParserFnt::nextLine(std::pair<string, std::map<string, string>> &line)
 
 // ---- FONT ---
 
-Font::Font(const string &name) : m_texture("res/fonts/" + name + ".png")
+Font::Font(const string &name) : m_texture("res/fonts/" + name + ".png"), textShader("text_sdf")
 {
     string path = "res/fonts/" + name + ".fnt";
     LOGDEBUG("loading font : {}", path);
@@ -181,7 +181,7 @@ void Font::text(const string &textString, vec2 position, float size, vec3 color)
     m_texts.push_back(t);
 }
 
-void Font::render()
+void Font::render(const mat4 &pmat)
 {
     // Nothing to render
     if (m_texts.empty())
@@ -197,7 +197,7 @@ void Font::render()
     {
 
         // Text infos
-        float scale = txt.fontSize / m_size; // TODO : use this
+        float scale = txt.fontSize / m_size;
 
         string s = txt.textString;
         vec3 color = txt.color;
@@ -283,6 +283,9 @@ void Font::render()
             nbChars++;
         }
     }
+    textShader.use();
+    textShader.setMat4("projection", pmat);
+
     m_texture.bind(0);
     VertexArray vao;
     VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());

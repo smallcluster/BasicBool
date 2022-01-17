@@ -39,6 +39,7 @@ private:
     vec4 m_padding;
     std::map<char, Glyph> m_glyphs;
     std::vector<Text> m_texts;
+    Shader textShader;
 
 public:
     Font(const string &name);
@@ -49,5 +50,5 @@ public:
     float getWidth(const string &text, float size);
 
     void text(const string &textString, vec2 position, float size, vec3 color);
-    void render();
+    void render(const mat4 &pmat);
 };

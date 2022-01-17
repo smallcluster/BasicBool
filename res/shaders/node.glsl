@@ -2,15 +2,21 @@
 #version 330 core
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aUV;
+layout (location = 2) in vec2 aSize;
+layout (location = 3) in float aHeaderHeight;
 
 uniform mat4 projection;
 uniform mat4 transform;
 
 out vec2 uv;
+out vec2 size;
+out float headerHeight;
 
 void main(){
     gl_Position = projection*transform*vec4(aPos.x, aPos.y, 0.0, 1.0);
     uv = aUV;
+    size = aSize;
+    headerHeight = aHeaderHeight;
 }
 
 
@@ -19,11 +25,10 @@ void main(){
 out vec4 FragColor;
 
 in vec2 uv;
+in vec2 size;
+in float headerHeight;
 
-uniform float width;
-uniform float height;
 uniform float radius;
-uniform float headerHeight;
 
 
 // SDF functions
@@ -35,12 +40,15 @@ float rect(vec2 p, vec2 c, float w, float h, float r){
 }
 
 void main(){
+    float width = size.x;
+    float height = size.y;
     // fragment pos in the rectangle
     vec2 p = vec2(uv.x*width, uv.y*height);
 
     float d = rect(p, vec2(width/2.0, height/2.0), width/2.0-1.5, height/2.0-1.5, radius);
 
     // mixing coef
+    // TODO : use fwidth()
     float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
 
     // final result

@@ -4,6 +4,7 @@
 #include "render/shapes.hpp"
 #include "core/math.hpp"
 #include "render/text.hpp"
+#include "node/nodes.hpp"
 
 
 int main(int argc, char const *argv[])
@@ -29,18 +30,13 @@ int main(int argc, char const *argv[])
 
     // Shaders
     Shader basicShader("basic");
-    Shader nodeShader("node");
-    Shader nodeShadowShader("node_shadow");
-    Shader nodeConnectorShader("node_connector");
-    Shader basicTextureShader("basic_texture");
-    Shader textShader("text_sdf");
 
     // Font
     Font font("roboto_regular_sdf");
 
-    // Shapes
-    Shapes &shapes = Shapes::getInstance();
-
+    NodeManager NodeManager(font);
+    NodeManager.addNode("TRUE", vec2(platform.getWidth()/2.0f, platform.getHeight()/2.0f));
+    NodeManager.addNode("NOT", vec2(platform.getWidth()/2.0f+200, platform.getHeight()/2.0f));
 
     // projection size
     float size = 1.0;
@@ -105,67 +101,7 @@ int main(int argc, char const *argv[])
         
 
         // ---- NODE TEST ---- //
-
-        string headerText = "NOT node test BIG 00";
-        float headerTextSize = 18;
-
-        float cx = platform.getMouseX();
-        float cy = platform.getMouseY();
-        float r = 8;
-        float s = 16;
-        float w = font.getWidth(headerText, headerTextSize) + 2 * r;
-        float headerHeight = font.getHeight(headerText, headerTextSize) + r;
-        float bodyHeight = 57;
-        float h = headerHeight + bodyHeight;
-
-        // Shadow
-        mat4 trans = identity<4>();
-        trans = scale(trans, vec3(w + 2 * s, h + 2 * s, 1));
-        trans = translate(trans, vec3(cx, cy, 0));
-        nodeShadowShader.use();
-        nodeShadowShader.setMat4("projection", pmat);
-        nodeShadowShader.setMat4("transform", trans);
-        nodeShadowShader.setFloat("width", w + 2 * s);
-        nodeShadowShader.setFloat("height", h + 2 * s);
-        nodeShadowShader.setFloat("smoothing", s);
-        nodeShadowShader.setFloat("radius", r);
-        shapes.drawQuad();
-
-        // node
-        trans = identity<4>();
-        trans = scale(trans, vec3(w, h, 1));
-        trans = translate(trans, vec3(cx, cy, 0));
-        nodeShader.use();
-        nodeShader.setMat4("projection", pmat);
-        nodeShader.setMat4("transform", trans);
-        nodeShader.setFloat("width", w);
-        nodeShader.setFloat("height", h);
-        nodeShader.setFloat("radius", r);
-        nodeShader.setFloat("headerHeight", headerHeight);
-        shapes.drawQuad();
-
-        // connectors
-        float dr = 16.0f;
-        trans = identity<4>();
-        trans = scale(trans, vec3(dr, dr, 1));
-        trans = translate(trans, vec3(cx - w / 2.0f + dr / 2.0f + 4, cy - h / 2.0f + headerHeight + dr / 2.0f + 4, 0));
-        nodeConnectorShader.use();
-        nodeConnectorShader.setMat4("projection", pmat);
-        nodeConnectorShader.setMat4("transform", trans);
-        nodeConnectorShader.setFloat("width", dr);
-        nodeConnectorShader.setFloat("height", dr);
-        nodeConnectorShader.setFloat("radius", dr / 2.0f);
-        nodeConnectorShader.setVec3("insideColor", vec3(0));
-        shapes.drawQuad();
-
-        // Text rendering
-        font.text(headerText, vec2(cx - w / 2 + 8, cy - h / 2 + 8), headerTextSize, vec3(1));
-
-        font.text("In", vec2(cx - w / 2.0f + dr / 2.0f + 16, cy - h / 2.0f + headerHeight + dr / 2.0f), 12, vec3(1));
-
-        textShader.use();
-        textShader.setMat4("projection", pmat);
-        font.render();
+        NodeManager.render(pmat);
 
         // End drawing
         platform.swapBuffers();

@@ -2,15 +2,21 @@
 #version 330 core
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aUV;
+layout (location = 2) in float aRadius;
+layout (location = 3) in float aStatus;
 
 uniform mat4 projection;
 uniform mat4 transform;
 
 out vec2 uv;
+out float radius;
+out float status;
 
 void main(){
     gl_Position = projection*transform*vec4(aPos.x, aPos.y, 0.0, 1.0);
     uv = aUV;
+    radius = aRadius;
+    status = aStatus;
 }
 
 
@@ -19,12 +25,12 @@ void main(){
 out vec4 FragColor;
 
 in vec2 uv;
+in float radius;
+in float status;
 
-uniform float radius;
-uniform float width;
-uniform float height;
-
-uniform vec3 insideColor;
+const vec3 emptyColor = vec3(0);
+const vec3 falseColor = vec3(1);
+const vec3 trueColor = vec3(1, 0, 0);
 
 
 float circle(vec2 p, vec2 c, float r){
@@ -35,9 +41,9 @@ float circle(vec2 p, vec2 c, float r){
 
 void main(){
     // fragment pos in the rectangle
-    vec2 p = vec2(uv.x*width, uv.y*height);
+    vec2 p = vec2(uv.x*radius*2, uv.y*radius*2);
 
-    vec2 c = vec2(width/2.0, height/2.0);
+    vec2 c = vec2(radius, radius);
 
     
     float d1 = circle(p, c, radius-1.5);
@@ -45,10 +51,20 @@ void main(){
     float d = max(-d2, d1); // Ring
 
     // mixing coef
+    // TODO : use fwidth()
     float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
     float res2 = step(0., d2);
 
     vec4 col = vec4(0);
+    vec3 insideColor;
+
+    if(status == -1.0)
+        insideColor = emptyColor;
+    else if(status == 1.0)
+        insideColor = trueColor;
+    else
+        insideColor = falseColor;
+
     col = mix(vec4(insideColor, 1), col, res2);
     col = mix(vec4(1), col, res);
     
