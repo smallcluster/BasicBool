@@ -27,7 +27,7 @@ in vec2 uv;
 in vec3 color;
 
 const float width = 0.5;
-const float sdfSize = 15;
+const float sdfSize = 20;
 
 // Adapted from : https://drewcassidy.me/2020/06/26/sdf-antialiasing/
 void main(){

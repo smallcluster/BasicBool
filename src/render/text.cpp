@@ -175,7 +175,7 @@ void Font::text(const string &textString, vec2 position, float size, vec3 color)
 {
     Text t;
     t.fontSize = size;
-    t.position = position;
+    t.position = position+vec2((m_padding.x*2)/size,0);
     t.textString = textString;
     t.color = color;
     m_texts.push_back(t);

@@ -49,6 +49,6 @@ void main(){
     float res = smoothstep(0., smoothing, d);
 
     // final result
-    FragColor = mix(vec4(0, 0, 0, 0.3), vec4(0), res);
+    FragColor = mix(vec4(0, 0, 0, 0.25), vec4(0), res);
 }
 

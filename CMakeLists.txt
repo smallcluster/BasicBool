@@ -29,6 +29,8 @@ add_executable(
     # NODE
     src/node/nodes.hpp
 
+    # GUI
+    src/gui/gui.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)

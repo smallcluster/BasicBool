@@ -183,8 +183,8 @@ struct ConnectorDrawcall
 class NodeManager
 {
 private:
-    const float headerTextSize = 18;
-    const float connectorTextSize = 12;
+    const float headerTextSize = 20;
+    const float connectorTextSize = 16;
     const float connectorRadius = 8;
     const vec2 connectorMargin = vec2(4, 4);
     const float inOutDist = 32;

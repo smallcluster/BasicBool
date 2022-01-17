@@ -30,6 +30,7 @@ in float status;
 
 const vec3 falseColor = vec3(1, 0, 0);
 const vec3 trueColor = vec3(0, 1, 0);
+const float smoothing = 4.0;
 
 
 float circle(vec2 p, vec2 c, float r){
@@ -41,23 +42,19 @@ float circle(vec2 p, vec2 c, float r){
 void main(){
     // fragment pos in the rectangle
     vec2 p = vec2(uv.x*radius*2, uv.y*radius*2);
-
     vec2 c = vec2(radius, radius);
-
-    
-    float d1 = circle(p, c, radius-1.5);
-    float d2 = circle(p, c, 3.2*radius/4.0); // Inside
+    float d1 = circle(p, c, radius);
+    float d2 = circle(p, c, 3*(radius)/4); // Inside
     float d = max(-d2, d1); // Ring
-
-    // mixing coef
-    // TODO : use fwidth
-    float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
-    float res2 = step(0., d2);
-
-    vec4 col = vec4(0);
-    col = mix(vec4((status == 1.0 ? trueColor : falseColor), 1), col, res2);
-    col = mix(vec4(1), col, res);
-    
+    vec2 duv = fwidth(uv)*smoothing;
+    float dd = length(duv*radius);
+    float pixelDist1 = d * 2 / dd;
+    float pixelDist2 = d2 * 2 / dd;
+    float alphaRing = clamp(0.5 - pixelDist1, 0.0, 1.0);
+    float alphaDisk = clamp(0.5 - pixelDist2, 0.0, 1.0);
+    vec3 diskColor = (status == 1.0 ? trueColor : falseColor);
+    vec3 ringColor = vec3(1);
+    vec4 col = vec4(diskColor*alphaDisk+ringColor*alphaRing, alphaRing+alphaDisk);
     // final result
     FragColor = col;
 }

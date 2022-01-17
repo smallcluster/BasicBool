@@ -21,6 +21,7 @@ int main(int argc, char const *argv[])
     // Opengl Setup
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
+    glEnable(GL_LINE_SMOOTH);
     //glEnable(GL_DEPTH_TEST);
     //glEnable(GL_STENCIL_TEST);
 
@@ -76,6 +77,7 @@ int main(int argc, char const *argv[])
 
 
         vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+
         int delta = platform.getMouseWheel();
 
         zoom += zoom*0.05f*delta;
@@ -103,6 +105,7 @@ int main(int argc, char const *argv[])
         glClear(GL_COLOR_BUFFER_BIT);
 
         // --- Grid --- //
+        // TODO : improve this
         int nx = width / 16;
         int ny = height / 16;
         std::vector<vec2> data;
@@ -125,7 +128,7 @@ int main(int argc, char const *argv[])
 
         basicShader.use();
         basicShader.setMat4("projection", pmat);
-        basicShader.setMat4("view", view);
+        basicShader.setMat4("view", identity<4>());
         basicShader.setVec3("color", vec3(77.0f / 255.0f));
 
         vao.bind();
@@ -136,6 +139,8 @@ int main(int argc, char const *argv[])
         // ---- NODE TEST ---- //
         NodeManager.simulate();
         NodeManager.render(pmat, view);
+
+        // mouse coords test
 
         // End drawing
         platform.swapBuffers();
