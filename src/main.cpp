@@ -35,8 +35,34 @@ int main(int argc, char const *argv[])
     Font font("roboto_regular_sdf");
 
     NodeManager NodeManager(font);
-    NodeManager.addNode("TRUE", vec2(platform.getWidth()/2.0f, platform.getHeight()/2.0f));
-    NodeManager.addNode("NOT", vec2(platform.getWidth()/2.0f+200, platform.getHeight()/2.0f));
+
+    vec2 orpos = vec2(platform.getWidth()/2.0f, platform.getHeight()/2.0f);
+
+    Node* true1 = new TrueNode(orpos+vec2(-350, -100));
+    Node* not1 = new NotNode(orpos+vec2(-200, -100));
+    Node* not2 = new NotNode(orpos+vec2(-200, 100));
+    Node* or1 = new OrNode(orpos);
+    Node* not3 = new NotNode(orpos+vec2(200, 0));
+
+
+    Link* true1Not1 = new Link(true1->getOutput("out"), not1->getInput("in"));
+
+    Link* not1Or1 = new Link(not1->getOutput("out"), or1->getInput("in1"));
+    Link* not2Or1 = new Link(not2->getOutput("out"), or1->getInput("in2"));
+    Link* or1Not3 = new Link(or1->getOutput("out"), not3->getInput("in"));
+
+
+    NodeManager.addNode(true1);
+    NodeManager.addNode(not1);
+    NodeManager.addNode(not2);
+    NodeManager.addNode(or1);
+    NodeManager.addNode(not3);
+
+    NodeManager.addLink(true1Not1);
+    NodeManager.addLink(not1Or1);
+    NodeManager.addLink(not2Or1);
+    NodeManager.addLink(or1Not3);
+
 
     // projection size
     float size = 1.0;
@@ -101,6 +127,7 @@ int main(int argc, char const *argv[])
         
 
         // ---- NODE TEST ---- //
+        NodeManager.simulate();
         NodeManager.render(pmat);
 
         // End drawing

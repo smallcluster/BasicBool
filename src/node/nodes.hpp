@@ -22,7 +22,6 @@ struct Connector
 // in -> out
 struct Link
 {
-    bool state = false;
     Connector *input;
     Connector *output;
     Link(Connector *in, Connector *out) : input(in), output(out)
@@ -204,7 +203,7 @@ private:
     std::vector<ConnectorDrawcall> connectorCalls;
 
     std::vector<Link *> links;
-    Shader basicShader;
+    Shader linkShader;
     Shader nodeShader;
     Shader nodeShadowShader;
     Shader nodeConnectorShader;
@@ -400,8 +399,35 @@ private:
         connectorCalls.clear();
     }
 
+    void renderLinks(const mat4 &pmat){
+        if(links.empty())
+            return;
+
+        std::vector<float> vertices;
+        vertices.reserve(links.size()*6);
+
+        for(const Link *li : links){
+            float state = li->input->state ? 1.0f : 0.0f;
+            vertices.insert(vertices.end(), {
+                // pos                                  // state
+                li->input->pos.x, li->input->pos.y,     state,
+                li->output->pos.x, li->output->pos.y,   state
+            });
+        }
+        VertexArray vao;
+        VertexBuffer vbo(&vertices[0], sizeof(float)*vertices.size());
+        VertexBufferLayout layout;
+        layout.push<float>(2); // pos
+        layout.push<float>(1); // state
+        vao.addBuffer(vbo, layout);
+        linkShader.use();
+        linkShader.setMat4("projection", pmat);
+        linkShader.setMat4("transform", identity<4>());
+        glDrawArrays(GL_LINES, 0, 2*links.size());
+    }
+
 public:
-    NodeManager(Font &font) : basicShader("basic"),
+    NodeManager(Font &font) : linkShader("link"),
                               nodeShader("node"),
                               nodeShadowShader("node_shadow"),
                               nodeConnectorShader("node_connector"),
@@ -409,7 +435,23 @@ public:
     {
     }
 
-    bool addNode(string name, vec2 pos)
+    ~NodeManager(){
+        for(Node* node : nodes)
+            delete node;
+        
+        for(Link* link : links)
+            delete link;
+    }
+
+    void addNode(Node* node){
+        nodes.push_back(node);
+    }
+
+    void addLink(Link* link){
+        links.push_back(link);
+    }
+
+    bool createNode(string name, vec2 pos)
     {
         if (name == "TRUE")
         {
@@ -436,10 +478,10 @@ public:
     void render(const mat4 &pmat)
     {
         doNodeLayout();
-        // TODO : render links
         renderShadows(pmat);
         renderNodes(pmat);
         renderConnectors(pmat);
+        renderLinks(pmat);
         // render text
         font.render(pmat);
     }

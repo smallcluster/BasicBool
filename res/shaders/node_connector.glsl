@@ -29,8 +29,8 @@ in float radius;
 in float status;
 
 const vec3 emptyColor = vec3(0);
-const vec3 falseColor = vec3(1);
-const vec3 trueColor = vec3(1, 0, 0);
+const vec3 falseColor = vec3(1, 0, 0);
+const vec3 trueColor = vec3(0, 1, 0);
 
 
 float circle(vec2 p, vec2 c, float r){
@@ -47,11 +47,11 @@ void main(){
 
     
     float d1 = circle(p, c, radius-1.5);
-    float d2 = circle(p, c, 3.0*radius/4.0); // Inside
+    float d2 = circle(p, c, 3.2*radius/4.0); // Inside
     float d = max(-d2, d1); // Ring
 
     // mixing coef
-    // TODO : use fwidth()
+    // TODO : use fwidth
     float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
     float res2 = step(0., d2);
 

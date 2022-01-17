@@ -52,7 +52,7 @@ void main(){
     float res = smoothstep(0., 1.5, d); // 1.5 px smoothing
 
     // final result
-    vec3 color = (p.y <= headerHeight) ? vec3(1,0,0) : vec3(0.2);
+    vec3 color = (p.y <= headerHeight) ? vec3(0,0,1) : vec3(0.2);
     FragColor = mix(vec4(color,1), vec4(color, 0), res);
 }
 
