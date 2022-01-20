@@ -300,3 +300,4 @@ void Font::render(const mat4 &pmat, const mat4 &view)
     glDrawElements(GL_TRIANGLES, nbChars * 6, GL_UNSIGNED_INT, 0);
     m_texts.clear(); // remove all draw calls
 }
+

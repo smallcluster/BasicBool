@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <cmath>
+#include <optional>
 
 
 int main(int argc, char const *argv[])
@@ -38,7 +39,7 @@ int main(int argc, char const *argv[])
     // Font
     Font font("roboto_regular_sdf");
 
-    NodeManager NodeManager(font);
+    NodeManager NodeManager;
 
     vec2 orpos = vec2(platform.getWidth()/2.0f, platform.getHeight()/2.0f);
 
@@ -75,6 +76,13 @@ int main(int argc, char const *argv[])
     double avgFps = 0;
     unsigned long long frame = 0;
 
+    vec2 pressedMousePos = vec2(0);
+    vec2 mouseDiff = vec2(0);
+    bool viewPanning = false;
+
+    std::optional<Node*> grabNode = {};
+    vec2 grabOffset = vec2(0);
+
 
     while (platform.processEvents())
     {
@@ -82,25 +90,46 @@ int main(int argc, char const *argv[])
 
         int width = platform.getWidth();
         int height = platform.getHeight();
-
-
         vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        // view panning and zooming
+        if(viewPanning){
+            mouseDiff = (mouse-pressedMousePos);
+        }
 
+        if(platform.isMousePressed(MouseButton::LEFT)){
+            grabNode = NodeManager.getNodeAt(mouse);
+            if(grabNode)
+                grabOffset = grabNode.value()->pos-mouse;
+        } else if(platform.isMouseReleased(MouseButton::LEFT)){
+            grabNode = {};
+        }
+
+        if(platform.isMousePressed(MouseButton::MIDDLE)){
+            viewPanning = true;
+            pressedMousePos = vec2(platform.getMouseX(), platform.getMouseY());
+        }
+        if(platform.isMouseReleased(MouseButton::MIDDLE)) {
+            viewPanning = false;
+            viewOffset = viewOffset + mouseDiff;
+            mouseDiff = vec2(0);
+        }
         int delta = platform.getMouseWheel();
-
         zoom += zoom*0.05f*delta;
         if(zoom < 0.1f)
             zoom = 0.1f;
         else if(zoom >= 10)
             zoom = 10;
-
         // View matrix
         mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
-        view = translate(view, vec3((1-zoom)*width/2.0f, (1-zoom)*height/2.0f, 1));
-
+        view = translate(view, vec3((1-zoom)*width/2.0f, (1-zoom)*height/2.0f, 0)+vec3(viewOffset+mouseDiff, 0));
         // Projection matrix
         mat4 pmat(vec4( 2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
         pmat = pmat;
+
+
+        if(grabNode){
+            grabNode.value()->pos = mouse + grabOffset;
+        }
 
         glViewport(0, 0, width, height);
 
@@ -146,7 +175,6 @@ int main(int argc, char const *argv[])
         NodeManager.simulate();
         NodeManager.render(pmat, view);
 
-
         // wait time
         /*
         auto endTime = std::chrono::high_resolution_clock::now();
@@ -179,9 +207,6 @@ int main(int argc, char const *argv[])
 
         // End drawing
         platform.swapBuffers();
-
-        
-        
     }
     return 0;
 }

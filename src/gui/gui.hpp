@@ -1,5 +1,13 @@
 #pragma once
 #include "core/math.hpp"
+#include "platform/platform.hpp"
 
 
-// TODO : constrained box widgets
+namespace gui
+{
+    struct rect{
+        vec2 pos;
+        vec2 size;
+    };
+
+} // namespace gui

@@ -30,6 +30,14 @@ struct Win32State
     int width, height;
     int mouseX, mouseY;
     int mouseWheel;  // 0 no change, -1 down, 1 up
+
+    bool mouseLeftDown = false;
+    bool mouseMiddleDown = false;
+    bool mouseRightDown = false;
+
+    bool prevMouseLeftDown = false;
+    bool prevMouseMiddleDown = false;
+    bool prevMouseRightDown = false;
 };
 
 static Win32State win32State;
@@ -103,16 +111,23 @@ LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARA
     break;
 
     case WM_LBUTTONDOWN:
+        win32State.mouseLeftDown = true;
+        break;
     case WM_MBUTTONDOWN:
+        win32State.mouseMiddleDown = true;
+        break;
     case WM_RBUTTONDOWN:
+        win32State.mouseRightDown = true;
+        break;
     case WM_LBUTTONUP:
+        win32State.mouseLeftDown = false;
+        break;
     case WM_RBUTTONUP:
+        win32State.mouseRightDown = false;
+        break;
     case WM_MBUTTONUP:
-    {
-        bool pressed = umsg == WM_LBUTTONDOWN || umsg == WM_RBUTTONDOWN || umsg == WM_MBUTTONDOWN;
-        // TODO : handle mouse button input
-    }
-    break;
+        win32State.mouseMiddleDown = false;
+        break;
 
     default:
         break;
@@ -257,12 +272,18 @@ Platform::~Platform()
 bool Platform::processEvents()
 {
     win32State.mouseWheel = 0; // reset wheel delta
+
+    win32State.prevMouseLeftDown = win32State.mouseLeftDown;
+    win32State.prevMouseRightDown = win32State.mouseRightDown;
+    win32State.prevMouseMiddleDown = win32State.mouseMiddleDown;
+
     MSG message;
     while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
+
     return !win32State.shouldClose;
 }
 
@@ -283,6 +304,29 @@ int Platform::getMouseY()
 
 int Platform::getMouseWheel(){
     return win32State.mouseWheel;
+}
+
+
+bool Platform::isMouseDown(MouseButton button){
+    return (button == MouseButton::LEFT && win32State.mouseLeftDown) || 
+    (button == MouseButton::MIDDLE && win32State.mouseMiddleDown ) || 
+    (button == MouseButton::RIGHT && win32State.mouseRightDown);
+}
+bool Platform::isMouseUP(MouseButton button){
+    return (button == MouseButton::LEFT && !win32State.mouseLeftDown) || 
+    (button == MouseButton::MIDDLE && !win32State.mouseMiddleDown ) || 
+    (button == MouseButton::RIGHT && !win32State.mouseRightDown);
+}
+
+bool Platform::isMousePressed(MouseButton button){
+    return (button == MouseButton::LEFT && !win32State.prevMouseLeftDown && win32State.mouseLeftDown) ||
+    (button == MouseButton::RIGHT && !win32State.prevMouseRightDown && win32State.mouseRightDown) ||
+    (button == MouseButton::MIDDLE && !win32State.prevMouseMiddleDown && win32State.mouseMiddleDown);
+}
+bool Platform::isMouseReleased(MouseButton button){
+    return (button == MouseButton::LEFT && win32State.prevMouseLeftDown && !win32State.mouseLeftDown) ||
+    (button == MouseButton::RIGHT && win32State.prevMouseRightDown && !win32State.mouseRightDown) ||
+    (button == MouseButton::MIDDLE && win32State.prevMouseMiddleDown && !win32State.mouseMiddleDown);
 }
 
 #endif

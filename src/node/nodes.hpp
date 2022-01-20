@@ -6,16 +6,20 @@
 #include "render/text.hpp"
 #include "render/shapes.hpp"
 #include <cmath>
+#include <optional>
 
 class Node;
 struct Link;
+
 struct Connector
 {
     Node *parent;
-    std::vector<Link*> links;
+    std::vector<Link *> links;
     bool state = false;
     string name;
-    vec2 pos;
+    vec2 pos;     // relative to parent node
+    vec2 textPos; // relative to parent node
+
     Connector(string name, Node *parent) : name(name), parent(parent) {}
 };
 
@@ -46,35 +50,73 @@ struct Link
     }
 };
 
+struct NodeStyle
+{
+    float headerTextSize = 20;
+    float connectorTextSize = 16;
+    float connectorRadius = 8;
+    vec2 connectorMargin = vec2(4, 4);
+    float inOutDist = 32;
+    float nodeRadius = 8;
+    float shadowSize = 16;
+    float textOutletMargin = 4;
+    Font &font;
+    NodeStyle(Font &font) : font(font) {}
+    NodeStyle() : font(Font::getDefault()) {}
+
+    static NodeStyle &getDefault()
+    {
+        static NodeStyle defaultstyle;
+        return defaultstyle;
+    }
+};
+
 class Node
 {
-    public:
-        std::vector<Connector *> inputs;
-        std::vector<Connector *> outputs;
+
+public:
+    std::vector<Connector *> inputs;
+    std::vector<Connector *> outputs;
     string name;
     vec2 pos;
-    Node(string name, vec2 pos) : name(name), pos(pos) {}
+    vec2 headerSize;
+    vec2 size;
+    Node(string name, vec2 pos, NodeStyle &style) : name(name), pos(pos), style(style)
+    {
+    }
+
+    Node(string name, vec2 pos) : name(name), pos(pos), style(NodeStyle::getDefault())
+    {
+    }
+
     ~Node()
     {
-        for(Connector *c : inputs)
+        for (Connector *c : inputs)
             delete c;
-        for(Connector *c : outputs)
+        for (Connector *c : outputs)
             delete c;
     }
+
     bool addOutput(string name)
     {
-        auto i = std::find_if(outputs.begin(), outputs.end(), [&name](Connector *c){return c->name == name;});
-        if(i == outputs.end()){
+        auto i = std::find_if(outputs.begin(), outputs.end(), [&name](Connector *c)
+                              { return c->name == name; });
+        if (i == outputs.end())
+        {
             outputs.push_back(new Connector(name, this));
+            doLayout();
             return true;
         }
         return false;
     }
     bool addInput(string name)
     {
-        auto i = std::find_if(inputs.begin(), inputs.end(), [&name](Connector *c){return c->name == name;});
-        if(i == inputs.end()){
+        auto i = std::find_if(inputs.begin(), inputs.end(), [&name](Connector *c)
+                              { return c->name == name; });
+        if (i == inputs.end())
+        {
             inputs.push_back(new Connector(name, this));
+            doLayout();
             return true;
         }
         return false;
@@ -82,7 +124,8 @@ class Node
 
     Connector *getInput(string name)
     {
-        auto i = std::find_if(inputs.begin(), inputs.end(), [&name](Connector *c){return c->name == name;});
+        auto i = std::find_if(inputs.begin(), inputs.end(), [&name](Connector *c)
+                              { return c->name == name; });
         if (i != inputs.end())
             return inputs[std::distance(inputs.begin(), i)];
         return nullptr;
@@ -90,15 +133,86 @@ class Node
 
     Connector *getOutput(string name)
     {
-        auto i = std::find_if(outputs.begin(), outputs.end(), [&name](Connector *c){return c->name == name;});
+        auto i = std::find_if(outputs.begin(), outputs.end(), [&name](Connector *c)
+                              { return c->name == name; });
         if (i != outputs.end())
             return outputs[std::distance(outputs.begin(), i)];
         return nullptr;
     }
 
-
-
     virtual void update() = 0;
+
+    vec2 getTextPos()
+    {
+        return pos + textPos;
+    }
+
+private:
+    NodeStyle &style;
+    vec2 textPos; // relative to it's pos
+    void doLayout()
+    {
+        const float headerHeight = style.font.getHeight(name, style.headerTextSize) + style.nodeRadius;
+        const float headerWidth = style.font.getWidth(name, style.headerTextSize) + 2 * style.nodeRadius;
+        textPos = vec2(style.nodeRadius, style.nodeRadius);
+        vec2 inputsSize = getConnectorSize(false);
+        vec2 outputsSize = getConnectorSize(true);
+        size = vec2(std::max(headerWidth, inputsSize.x + style.inOutDist + outputsSize.x), headerHeight + std::max(inputsSize.y, outputsSize.y));
+        
+        headerSize = vec2(size.x, headerHeight);
+        doConnectorLayout(false);
+        doConnectorLayout(true);
+    }
+    vec2 getConnectorSize(bool output)
+    {
+        vec2 connectorSize = vec2(0);
+        std::vector<Connector *> &connectors = output ? outputs : inputs;
+        for (Connector *c : connectors)
+        {
+            connectorSize.y += style.connectorMargin.y * 2 + std::max(style.connectorRadius * 2, style.font.getHeight(c->name, style.connectorTextSize));
+            connectorSize.x = std::max(connectorSize.x, style.connectorMargin.x + style.connectorRadius * 2 + style.font.getWidth(c->name, style.connectorTextSize) + style.textOutletMargin);
+        }
+        return connectorSize;
+    }
+    void doConnectorLayout(bool output)
+    {
+        float inOffsetY = headerSize.y;
+        std::vector<Connector *> &connectors = output ? outputs : inputs;
+        for (Connector *c : connectors)
+        {
+            inOffsetY += style.connectorMargin.y;
+            vec2 outletPos;
+            vec2 connectorTextPos;
+            if (output)
+            {
+                float textWidth = style.font.getWidth(c->name, style.connectorTextSize);
+                outletPos.x = size.x - style.connectorMargin.x - style.connectorRadius;
+                connectorTextPos.x = size.x - style.connectorMargin.x - 2 * style.connectorRadius - textWidth - style.textOutletMargin;
+            }
+            else
+            {
+                outletPos.x = style.connectorMargin.x + style.connectorRadius;
+                connectorTextPos.x = style.connectorMargin.x + 2 * style.connectorRadius + style.textOutletMargin;
+            }
+            float textHeight = style.font.getHeight(c->name, style.connectorTextSize);
+            float totalHeight = textHeight;
+            if (style.connectorRadius * 2 <= textHeight)
+            {
+                connectorTextPos.y = inOffsetY;
+                outletPos.y = inOffsetY + textHeight / 2.0f;
+            }
+            else
+            {
+                outletPos.y = inOffsetY + style.connectorRadius;
+                connectorTextPos.y = inOffsetY + style.connectorRadius - textHeight / 2.0f;
+                totalHeight = style.connectorRadius * 2;
+            }
+            // update connector pos
+            c->pos = outletPos;
+            c->textPos = connectorTextPos;
+            inOffsetY += totalHeight;
+        }
+    }
 };
 
 // ------ Basic nodes ---------------
@@ -106,6 +220,10 @@ class Node
 class TrueNode : public Node
 {
 public:
+    TrueNode(vec2 pos, NodeStyle &style) : Node("TRUE", pos, style)
+    {
+        addOutput("out");
+    }
     TrueNode(vec2 pos) : Node("TRUE", pos)
     {
         addOutput("out");
@@ -119,6 +237,11 @@ public:
 class NotNode : public Node
 {
 public:
+    NotNode(vec2 pos, NodeStyle &style) : Node("NOT", pos, style)
+    {
+        addInput("in");
+        addOutput("out");
+    }
     NotNode(vec2 pos) : Node("NOT", pos)
     {
         addInput("in");
@@ -133,6 +256,12 @@ public:
 class AndNode : public Node
 {
 public:
+    AndNode(vec2 pos, NodeStyle &style) : Node("AND", pos, style)
+    {
+        addInput("in1");
+        addInput("in2");
+        addOutput("out");
+    }
     AndNode(vec2 pos) : Node("AND", pos)
     {
         addInput("in1");
@@ -148,6 +277,12 @@ public:
 class OrNode : public Node
 {
 public:
+    OrNode(vec2 pos, NodeStyle &style) : Node("OR", pos, style)
+    {
+        addInput("in1");
+        addInput("in2");
+        addOutput("out");
+    }
     OrNode(vec2 pos) : Node("OR", pos)
     {
         addInput("in1");
@@ -160,155 +295,43 @@ public:
     }
 };
 
-struct ShadowDrawcall
-{
-    vec2 pos;
-    vec2 size;
-};
-
-struct NodeDrawcall
-{
-    vec2 pos;
-    vec2 size;
-    float headerHeight;
-    vec2 textPos;
-    string text;
-};
-
-struct ConnectorDrawcall
-{
-    vec2 pos;
-    float r;
-    float state;
-    vec2 textPos;
-    string text;
-};
-
 // ---- Simulation ----
 class NodeManager
 {
 private:
-    const float headerTextSize = 20;
-    const float connectorTextSize = 16;
-    const float connectorRadius = 8;
-    const vec2 connectorMargin = vec2(4, 4);
-    const float inOutDist = 32;
-    const float nodeRadius = 8;
-    const float shadowSize = 16;
-    const float textOutletMargin = 4;
-
     std::vector<Node *> nodes;
-
-    // Drawcalls
-    std::vector<ShadowDrawcall> shadowCalls;
-    std::vector<NodeDrawcall> nodeCalls;
-    std::vector<ConnectorDrawcall> connectorCalls;
-
     std::vector<Link *> links;
     Shader linkShader;
     Shader nodeShader;
     Shader nodeShadowShader;
     Shader nodeConnectorShader;
-    Font &font;
-
-    vec2 getConnectorSize(Node* node, bool output){
-        vec2 size = vec2(0);
-        std::vector<Connector*> &connectors = output ? node->outputs : node->inputs;
-        for(Connector *c : connectors){
-            size.y += connectorMargin.y*2+std::max(connectorRadius*2, font.getHeight(c->name, connectorTextSize));
-            size.x = std::max(size.x, connectorMargin.x+connectorRadius*2+font.getWidth(c->name, connectorTextSize)+textOutletMargin);
-        }
-        return size;
-    }
-
-    void doConnectorLayout(Node* node, bool output, float nodeWidth, float headerHeight){
-            float inOffsetY = node->pos.y+headerHeight;
-            std::vector<Connector*> &connectors = output ? node->outputs : node->inputs;
-
-            for(Connector *c : connectors){
-                inOffsetY += connectorMargin.y;
-
-                vec2 outletPos;
-                vec2 textPos;
-
-                if(output){
-                    float textWidth = font.getWidth(c->name, connectorTextSize);
-                    outletPos.x = node->pos.x + nodeWidth - connectorMargin.x - connectorRadius;
-                    textPos.x = node->pos.x + nodeWidth - connectorMargin.x - 2*connectorRadius - textWidth-textOutletMargin;
-                } else {
-                    outletPos.x = node->pos.x + connectorMargin.x+connectorRadius;
-                    textPos.x = node->pos.x + connectorMargin.x+2*connectorRadius+textOutletMargin;
-                }
-
-                float textHeight = font.getHeight(c->name, connectorTextSize);
-                float totalHeight = textHeight;
-                if(connectorRadius*2 <= textHeight){
-                    textPos.y = inOffsetY;
-                    outletPos.y = inOffsetY+textHeight/2.0f;
-                } else {
-                    outletPos.y = inOffsetY+connectorRadius;
-                    textPos.y = inOffsetY+connectorRadius-textHeight/2.0f;
-                    totalHeight = connectorRadius*2;
-                }
-
-                // update connector pos
-                c->pos = outletPos;
-                // draw connector
-                connectorCalls.push_back({outletPos, connectorRadius, c->state ? 1.0f : 0.0f, textPos, c->name});
-
-                inOffsetY += totalHeight;
-            }
-    }
-
-    void doNodeLayout()
-    {
-        for (Node *node : nodes)
-        {
-            // node
-            const float headerHeight = font.getHeight(node->name, headerTextSize) + nodeRadius;
-            const float headerWidth = font.getWidth(node->name, headerTextSize) + 2 * nodeRadius;
-
-            vec2 inputsSize = getConnectorSize(node, false);
-            vec2 outputsSize = getConnectorSize(node, true);
-
-
-            vec2 nodeSize = vec2(std::max(headerWidth, inputsSize.x+inOutDist+outputsSize.x), headerHeight+std::max(inputsSize.y,outputsSize.y));
-
-            nodeCalls.push_back({node->pos, nodeSize, headerHeight, node->pos+vec2(nodeRadius, nodeRadius), node->name});
-
-            // shadow
-            shadowCalls.push_back({node->pos-vec2(shadowSize, shadowSize), nodeSize+2*vec2(shadowSize, shadowSize)});
-
-            // inputs
-            doConnectorLayout(node, false, nodeSize.x, headerHeight);
-            // outputs
-            doConnectorLayout(node, true, nodeSize.x, headerHeight);
-        }
-    }
+    NodeStyle &nodeStyle;
 
     void renderShadows(const mat4 &pmat, const mat4 &view)
     {
-        if(shadowCalls.empty())
+        if (nodes.empty())
             return;
+
         std::vector<float> vertices;
-        vertices.reserve(shadowCalls.size()*6);
+        vertices.reserve(nodes.size() * 6);
         std::vector<unsigned int> indices;
-        indices.reserve(shadowCalls.size()*6);
+        indices.reserve(nodes.size() * 6);
         int i = 0;
-        for(const ShadowDrawcall &c : shadowCalls){
-            vertices.insert(vertices.end(), {
-                // pos                                 // uv  // size
-                c.pos.x, c.pos.y,                      0, 0,  c.size.x, c.size.y,
-                c.pos.x+c.size.x, c.pos.y,             1, 0,  c.size.x, c.size.y,
-                c.pos.x+c.size.x, c.pos.y+c.size.y,    1, 1,  c.size.x, c.size.y,
-                c.pos.x, c.pos.y+c.size.y,             0, 1,  c.size.x, c.size.y
-            });
-            unsigned int n = (i++)*4;
-            indices.insert(indices.end(), { n, n+1, n+2, n, n+2, n+3});
+        for (const Node *node : nodes)
+        {
+            vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
+            vec2 size = node->size + vec2(nodeStyle.shadowSize * 2);
+            vertices.insert(vertices.end(), {// pos                                               // uv // size
+                                             pos.x, pos.y, 0, 0, size.x, size.y,
+                                             pos.x + size.x, pos.y, 1, 0, size.x, size.y,
+                                             pos.x + size.x, pos.y + size.y, 1, 1, size.x, size.y,
+                                             pos.x, pos.y + size.y, 0, 1, size.x, size.y});
+            unsigned int n = (i++) * 4;
+            indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
         }
         VertexArray vao;
-        VertexBuffer vbo(&vertices[0], sizeof(float)*vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int)*indices.size());
+        VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
+        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
         layout.push<float>(2); // uv
@@ -318,36 +341,36 @@ private:
         nodeShadowShader.use();
         nodeShadowShader.setMat4("projection", pmat);
         nodeShadowShader.setMat4("view", view);
-        nodeShadowShader.setFloat("smoothing", shadowSize);
-        nodeShadowShader.setFloat("radius", nodeRadius);
-        glDrawElements(GL_TRIANGLES, shadowCalls.size() * 6, GL_UNSIGNED_INT, 0);
-        shadowCalls.clear();
+        nodeShadowShader.setFloat("smoothing", nodeStyle.shadowSize);
+        nodeShadowShader.setFloat("radius", nodeStyle.nodeRadius);
+        glDrawElements(GL_TRIANGLES, nodes.size() * 6, GL_UNSIGNED_INT, 0);
     }
 
     void renderNodes(const mat4 &pmat, const mat4 &view)
     {
-        if(nodeCalls.empty())
+        if (nodes.empty())
             return;
         std::vector<float> vertices;
-        vertices.reserve(nodeCalls.size()*7);
+        vertices.reserve(nodes.size() * 7);
         std::vector<unsigned int> indices;
-        indices.reserve(nodeCalls.size()*6);
+        indices.reserve(nodes.size() * 6);
         int i = 0;
-        for(const NodeDrawcall &c : nodeCalls){
-            vertices.insert(vertices.end(), {
-                // pos                                 // uv  // size               // header height
-                c.pos.x, c.pos.y,                      0, 0,  c.size.x, c.size.y,   c.headerHeight,
-                c.pos.x+c.size.x, c.pos.y,             1, 0,  c.size.x, c.size.y,   c.headerHeight,
-                c.pos.x+c.size.x, c.pos.y+c.size.y,    1, 1,  c.size.x, c.size.y,   c.headerHeight,
-                c.pos.x, c.pos.y+c.size.y,             0, 1,  c.size.x, c.size.y,   c.headerHeight
-            });
-            unsigned int n = (i++)*4;
-            indices.insert(indices.end(), { n, n+1, n+2, n, n+2, n+3});
-            font.text(c.text, c.textPos, headerTextSize, vec3(1)); // register text
+        for (const Node *node : nodes)
+        {
+            vec2 pos = node->pos;
+            vec2 size = node->size;
+            float headerHeight = node->headerSize.y;
+            vertices.insert(vertices.end(), {// pos                                 // uv  // size               // header height
+                                             pos.x, pos.y, 0, 0, size.x, size.y, headerHeight,
+                                             pos.x + size.x, pos.y, 1, 0, size.x, size.y, headerHeight,
+                                             pos.x + size.x, pos.y + size.y, 1, 1, size.x, size.y, headerHeight,
+                                             pos.x, pos.y + size.y, 0, 1, size.x, size.y, headerHeight});
+            unsigned int n = (i++) * 4;
+            indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
         }
         VertexArray vao;
-        VertexBuffer vbo(&vertices[0], sizeof(float)*vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int)*indices.size());
+        VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
+        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
         layout.push<float>(2); // uv
@@ -358,35 +381,110 @@ private:
         nodeShader.use();
         nodeShader.setMat4("projection", pmat);
         nodeShader.setMat4("view", view);
-        nodeShader.setFloat("radius", nodeRadius);
-        glDrawElements(GL_TRIANGLES, nodeCalls.size() * 6, GL_UNSIGNED_INT, 0);
-        nodeCalls.clear();
+        nodeShader.setFloat("radius", nodeStyle.nodeRadius);
+        glDrawElements(GL_TRIANGLES, nodes.size() * 6, GL_UNSIGNED_INT, 0);
+    }
+
+    void renderText(const mat4 &pmat, const mat4 &view)
+    {
+        for (const Node *node : nodes)
+        {
+            nodeStyle.font.text(node->name, node->pos + vec2(nodeStyle.nodeRadius), nodeStyle.headerTextSize, vec3(1));
+            for (const Connector *c : node->inputs)
+            {
+                nodeStyle.font.text(c->name, c->parent->pos+c->textPos, nodeStyle.connectorTextSize, vec3(1));
+            }
+            for (const Connector *c : node->outputs)
+            {
+                nodeStyle.font.text(c->name, c->parent->pos+c->textPos, nodeStyle.connectorTextSize, vec3(1));
+            }
+        }
+        nodeStyle.font.render(pmat, view);
     }
 
     void renderConnectors(const mat4 &pmat, const mat4 &view)
     {
-        if(connectorCalls.empty())
+        if (nodes.empty())
             return;
+
         std::vector<float> vertices;
-        vertices.reserve(connectorCalls.size()*6);
         std::vector<unsigned int> indices;
-        indices.reserve(connectorCalls.size()*6);
         int i = 0;
-        for(const ConnectorDrawcall &c : connectorCalls){
-            vertices.insert(vertices.end(), {
-                // pos                      // uv   // radius   // state
-                c.pos.x-c.r, c.pos.y-c.r,   0, 0,   c.r,        c.state,
-                c.pos.x+c.r, c.pos.y-c.r,   1, 0,   c.r,        c.state,
-                c.pos.x+c.r, c.pos.y+c.r,   1, 1,   c.r,        c.state,
-                c.pos.x-c.r, c.pos.y+c.r,   0, 1,   c.r,        c.state,
-            });
-            unsigned int n = (i++)*4;
-            indices.insert(indices.end(), { n, n+1, n+2, n, n+2, n+3});
-            font.text(c.text, c.textPos, connectorTextSize, vec3(1)); // register text
+        for (const Node *node : nodes)
+        {
+
+            for (const Connector *c : node->inputs)
+            {
+                vec2 pos = c->parent->pos+c->pos;
+                float state = c->state ? 1.0f : 0.0f;
+                vertices.insert(vertices.end(), {
+                                                    // pos                      // uv   // radius   // state
+                                                    pos.x - nodeStyle.connectorRadius,
+                                                    pos.y - nodeStyle.connectorRadius,
+                                                    0,
+                                                    0,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x + nodeStyle.connectorRadius,
+                                                    pos.y - nodeStyle.connectorRadius,
+                                                    1,
+                                                    0,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x + nodeStyle.connectorRadius,
+                                                    pos.y + nodeStyle.connectorRadius,
+                                                    1,
+                                                    1,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x - nodeStyle.connectorRadius,
+                                                    pos.y + nodeStyle.connectorRadius,
+                                                    0,
+                                                    1,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                });
+                unsigned int n = (i++) * 4;
+                indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+            }
+            for (const Connector *c : node->outputs)
+            {
+                vec2 pos = c->parent->pos+c->pos;
+                float state = c->state ? 1.0f : 0.0f;
+                vertices.insert(vertices.end(), {
+                                                    // pos                      // uv   // radius   // state
+                                                    pos.x - nodeStyle.connectorRadius,
+                                                    pos.y - nodeStyle.connectorRadius,
+                                                    0,
+                                                    0,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x + nodeStyle.connectorRadius,
+                                                    pos.y - nodeStyle.connectorRadius,
+                                                    1,
+                                                    0,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x + nodeStyle.connectorRadius,
+                                                    pos.y + nodeStyle.connectorRadius,
+                                                    1,
+                                                    1,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                    pos.x - nodeStyle.connectorRadius,
+                                                    pos.y + nodeStyle.connectorRadius,
+                                                    0,
+                                                    1,
+                                                    nodeStyle.connectorRadius,
+                                                    state,
+                                                });
+                unsigned int n = (i++) * 4;
+                indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+            }
         }
         VertexArray vao;
-        VertexBuffer vbo(&vertices[0], sizeof(float)*vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int)*indices.size());
+        VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
+        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
         layout.push<float>(2); // uv
@@ -397,27 +495,29 @@ private:
         nodeConnectorShader.use();
         nodeConnectorShader.setMat4("projection", pmat);
         nodeConnectorShader.setMat4("view", view);
-        glDrawElements(GL_TRIANGLES, connectorCalls.size() * 6, GL_UNSIGNED_INT, 0);
-        connectorCalls.clear();
+        glDrawElements(GL_TRIANGLES, i * 6, GL_UNSIGNED_INT, 0);
     }
 
     // TODO : render line with thickness on geometry shader
-    void renderLinks(const mat4 &pmat, const mat4 &view){
-        if(links.empty())
+    void renderLinks(const mat4 &pmat, const mat4 &view)
+    {
+        if (links.empty())
             return;
         std::vector<float> vertices;
-        vertices.reserve(links.size()*6);
+        vertices.reserve(links.size() * 6);
 
-        for(const Link *li : links){
+        for (const Link *li : links)
+        {
             float state = li->input->state ? 1.0f : 0.0f;
-            vertices.insert(vertices.end(), {
-                // pos                                  // state
-                li->input->pos.x, li->input->pos.y,     state,
-                li->output->pos.x, li->output->pos.y,   state
-            });
+
+            vec2 inPos = li->input->parent->pos + li->input->pos;
+            vec2 outPos = li->output->parent->pos + li->output->pos;
+            vertices.insert(vertices.end(), {// pos                                  // state
+                                             inPos.x, inPos.y, state,
+                                             outPos.x, outPos.y, state});
         }
         VertexArray vao;
-        VertexBuffer vbo(&vertices[0], sizeof(float)*vertices.size());
+        VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
         layout.push<float>(1); // state
@@ -425,31 +525,34 @@ private:
         linkShader.use();
         linkShader.setMat4("projection", pmat);
         linkShader.setMat4("view", view);
-        glDrawArrays(GL_LINES, 0, 2*links.size());
+        glDrawArrays(GL_LINES, 0, 2 * links.size());
     }
 
 public:
-    NodeManager(Font &font) : linkShader("link"),
-                              nodeShader("node"),
-                              nodeShadowShader("node_shadow"),
-                              nodeConnectorShader("node_connector"),
-                              font(font)
+    NodeManager() : linkShader("link"),
+                    nodeShader("node"),
+                    nodeShadowShader("node_shadow"),
+                    nodeConnectorShader("node_connector"),
+                    nodeStyle(NodeStyle::getDefault())
     {
     }
 
-    ~NodeManager(){
+    ~NodeManager()
+    {
         // LINKS FIRST
-        for(Link* link : links)
+        for (Link *link : links)
             delete link;
-        for(Node* node : nodes)
+        for (Node *node : nodes)
             delete node;
     }
 
-    void addNode(Node* node){
+    void addNode(Node *node)
+    {
         nodes.push_back(node);
     }
 
-    void addLink(Link* link){
+    void addLink(Link *link)
+    {
         links.push_back(link);
     }
 
@@ -477,15 +580,14 @@ public:
         }
         return false;
     }
+
     void render(const mat4 &pmat, const mat4 &view)
     {
-        doNodeLayout();
         renderShadows(pmat, view);
         renderNodes(pmat, view);
         renderConnectors(pmat, view);
         renderLinks(pmat, view);
-        // render text
-        font.render(pmat, view);
+        renderText(pmat, view);
     }
 
     void simulate()
@@ -495,5 +597,17 @@ public:
             n->update();
         for (Link *li : links)
             li->update();
+    }
+
+    std::optional<Node *> getNodeAt(vec2 mouse)
+    {
+        for (Node *node : nodes)
+        {
+            vec2 size = node->headerSize;
+            vec2 pos = node->pos;
+            if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y)
+                return node;
+        }
+        return {};
     }
 };

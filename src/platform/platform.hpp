@@ -5,6 +5,12 @@
 
 #include "core/defines.hpp"
 
+enum class MouseButton {
+    LEFT,
+    MIDDLE,
+    RIGHT
+};
+
 class Platform
 {
 protected:
@@ -31,4 +37,10 @@ public:
     int getMouseX();
     int getMouseY();
     int getMouseWheel();
+
+    bool isMouseDown(MouseButton button);
+    bool isMouseUP(MouseButton button);
+
+    bool isMousePressed(MouseButton button);
+    bool isMouseReleased(MouseButton button);
 };
