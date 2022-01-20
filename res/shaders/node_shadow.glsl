@@ -28,6 +28,7 @@ uniform float smoothing;
 uniform float radius;
 
 
+
 float rect(vec2 p, vec2 c, float w, float h, float r){
     vec2 size = vec2(w-r, h-r);
     vec2 o = p-c;

@@ -30,6 +30,7 @@ in float headerHeight;
 
 uniform float radius;
 
+
 const vec3 headerColor = vec3(0, 0, 1);
 const vec3 bodyColor = vec3(0.2);
 const float smoothing = 4;

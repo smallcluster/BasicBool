@@ -142,7 +142,7 @@ public:
 
     virtual void update() = 0;
 
-    vec2 getTextPos()
+    vec2 getTextPos() const 
     {
         return pos + textPos;
     }
@@ -150,6 +150,7 @@ public:
 private:
     NodeStyle &style;
     vec2 textPos; // relative to it's pos
+
     void doLayout()
     {
         const float headerHeight = style.font.getHeight(name, style.headerTextSize) + style.nodeRadius;
@@ -389,7 +390,7 @@ private:
     {
         for (const Node *node : nodes)
         {
-            nodeStyle.font.text(node->name, node->pos + vec2(nodeStyle.nodeRadius), nodeStyle.headerTextSize, vec3(1));
+            nodeStyle.font.text(node->name, node->getTextPos(), nodeStyle.headerTextSize, vec3(1));
             for (const Connector *c : node->inputs)
             {
                 nodeStyle.font.text(c->name, c->parent->pos+c->textPos, nodeStyle.connectorTextSize, vec3(1));
@@ -581,6 +582,7 @@ public:
         return false;
     }
 
+    // TODO : use glBufferSubData instead of rebuilding every frame ?
     void render(const mat4 &pmat, const mat4 &view)
     {
         renderShadows(pmat, view);
@@ -589,6 +591,7 @@ public:
         renderLinks(pmat, view);
         renderText(pmat, view);
     }
+
 
     void simulate()
     {
