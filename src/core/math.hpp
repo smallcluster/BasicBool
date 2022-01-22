@@ -21,6 +21,15 @@ struct Vector
 };
 
 template <int n>
+constexpr Vector<n> operator- (const Vector<n> &v)
+{
+    Vector<n> vec;
+    for (int i = 0; i < n; ++i)
+        vec[i] = -v[i];
+    return vec;
+}
+
+template <int n>
 constexpr Vector<n> operator+(const Vector<n> &v1, const Vector<n> &v2)
 {
     Vector<n> vec;
@@ -36,6 +45,7 @@ constexpr Vector<n> operator-(const Vector<n> &v1, const Vector<n> &v2)
         vec[i] = v1[i] - v2[i];
     return vec;
 }
+
 template <int n>
 constexpr Vector<n> operator*(const Vector<n> &v1, const Vector<n> &v2)
 {
@@ -122,7 +132,8 @@ constexpr Vector<n> operator-(const float v1, const Vector<n> &v2)
 template <int n>
 constexpr float dot(const Vector<n> &v1, const Vector<n> &v2)
 {
-    float res for (int i = 0; i < n; ++i)
+    float res = 0; 
+    for (int i = 0; i < n; ++i)
         res += v1[i] * v2[i];
     return res;
 }
@@ -130,7 +141,8 @@ constexpr float dot(const Vector<n> &v1, const Vector<n> &v2)
 template <int n>
 constexpr float lengthSq(const Vector<n> &v1)
 {
-    float d for (int i = 0; i < n; ++i)
+    float d = 0; 
+    for (int i = 0; i < n; ++i)
         d += v1[i] * v1[i];
     return d;
 }
@@ -138,7 +150,8 @@ constexpr float lengthSq(const Vector<n> &v1)
 template <int n>
 constexpr float length(const Vector<n> &v1)
 {
-    float d for (int i = 0; i < n; ++i)
+    float d = 0; 
+    for (int i = 0; i < n; ++i)
         d += v1[i] * v1[i];
     return sqrt(d);
 }
@@ -259,6 +272,7 @@ struct Vector<3>
         y = vec.y;
         z = v;
     }
+    
 };
 
 // vec4
@@ -282,6 +296,10 @@ struct Vector<4>
         Vector<3> rgb;
     };
     constexpr float &operator[](int i)
+    {
+        return data[i];
+    }
+    constexpr float operator[](int i) const
     {
         return data[i];
     }

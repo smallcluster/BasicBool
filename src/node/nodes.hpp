@@ -19,8 +19,8 @@ struct Connector
     string name;
     vec2 pos;     // relative to parent node
     vec2 textPos; // relative to parent node
-
-    Connector(string name, Node *parent) : name(name), parent(parent) {}
+    bool isInput = false;
+    Connector(string name, Node *parent, bool isInput) : name(name), parent(parent), isInput(isInput) {}
 };
 
 // in -> out
@@ -103,7 +103,7 @@ public:
                               { return c->name == name; });
         if (i == outputs.end())
         {
-            outputs.push_back(new Connector(name, this));
+            outputs.push_back(new Connector(name, this, false));
             doLayout();
             return true;
         }
@@ -115,7 +115,7 @@ public:
                               { return c->name == name; });
         if (i == inputs.end())
         {
-            inputs.push_back(new Connector(name, this));
+            inputs.push_back(new Connector(name, this, true));
             doLayout();
             return true;
         }
@@ -612,5 +612,93 @@ public:
                 return node;
         }
         return {};
+    }
+
+    std::optional<Connector*> getConnectorAt(vec2 mouse){
+        for (Node *node : nodes)
+        {
+            vec2 size = node->size;
+            vec2 pos = node->pos;
+            if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y){
+                // check inputs
+                for(Connector* c : node->inputs){
+                    vec2 cpos = node->pos + c->pos;
+                    float r = nodeStyle.connectorRadius;
+                    if(distanceSq(mouse, cpos) <= r*r)
+                        return c;
+                }
+
+                // check outputs
+                for(Connector* c : node->outputs){
+                    vec2 cpos = node->pos + c->pos;
+                    float r = nodeStyle.connectorRadius;
+                    if(distanceSq(mouse, cpos) <= r*r)
+                        return c;
+                }
+            }
+        }
+        return {};
+    }
+
+    void drawTempLink(Connector* c, vec2 mouse, const mat4& pmat, const mat4& view){
+        vec2 start = c->parent->pos + c->pos;
+        float state = c->state ? 1.0f : 0.0f;
+
+        float vertices[] = {
+            start.x, start.y, state,
+            mouse.x, mouse.y, state
+        };
+
+        VertexArray vao;
+        VertexBuffer vbo(vertices, sizeof(vertices));
+        VertexBufferLayout layout;
+        layout.push<float>(2); // pos
+        layout.push<float>(1); // state
+        vao.addBuffer(vbo, layout);
+        linkShader.use();
+        linkShader.setMat4("projection", pmat);
+        linkShader.setMat4("view", view);
+        glDrawArrays(GL_LINES, 0, 2);
+    }
+
+    bool connect(Connector *c1, Connector *c2){
+        if(!c1->isInput && c2->isInput){
+            if(!(c2->links.empty())){
+                Link* li = c2->links[0];
+                links.erase(std::remove(links.begin(), links.end(), li), links.end());
+                delete li;
+            }
+            links.push_back(new Link(c1, c2));
+            return true;
+        } else if(c1->isInput && !c2->isInput){
+
+            if(!(c1->links.empty())){
+                Link* li = c1->links[0];
+                links.erase(std::remove(links.begin(), links.end(), li), links.end());
+                delete li;
+            }
+            links.push_back(new Link(c2, c1));
+            return true;
+        }
+        return false;
+    }
+
+    void disconnectAll(Connector *c){
+        std::vector<Link*> temp = c->links;
+        for(Link* li : temp){
+            links.erase(std::remove(links.begin(), links.end(), li), links.end());
+            delete li;
+        }
+    }
+
+    void removeNode(Node* node){
+        // remove & delete links
+        for(Connector* c : node->inputs)
+            disconnectAll(c);
+        for(Connector* c : node->outputs)
+            disconnectAll(c);
+        // remove & delete node
+        nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());
+        delete node;
     }
 };

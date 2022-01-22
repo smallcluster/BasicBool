@@ -10,7 +10,6 @@
 #include <cmath>
 #include <optional>
 
-
 int main(int argc, char const *argv[])
 {
     // Math vector & matrix packing check
@@ -41,21 +40,19 @@ int main(int argc, char const *argv[])
 
     NodeManager NodeManager;
 
-    vec2 orpos = vec2(platform.getWidth()/2.0f, platform.getHeight()/2.0f);
+    vec2 orpos = vec2(platform.getWidth() / 2.0f, platform.getHeight() / 2.0f);
 
-    Node* true1 = new TrueNode(orpos+vec2(-350, -100));
-    Node* not1 = new NotNode(orpos+vec2(-200, -100));
-    Node* not2 = new NotNode(orpos+vec2(-200, 100));
-    Node* or1 = new OrNode(orpos);
-    Node* not3 = new NotNode(orpos+vec2(200, 0));
+    Node *true1 = new TrueNode(orpos + vec2(-350, -100));
+    Node *not1 = new NotNode(orpos + vec2(-200, -100));
+    Node *not2 = new NotNode(orpos + vec2(-200, 100));
+    Node *or1 = new OrNode(orpos);
+    Node *not3 = new NotNode(orpos + vec2(200, 0));
 
+    //Link* true1Not1 = new Link(true1->getOutput("out"), not1->getInput("in"));
 
-    Link* true1Not1 = new Link(true1->getOutput("out"), not1->getInput("in"));
-
-    Link* not1Or1 = new Link(not1->getOutput("out"), or1->getInput("in1"));
-    Link* not2Or1 = new Link(not2->getOutput("out"), or1->getInput("in2"));
-    Link* or1Not3 = new Link(or1->getOutput("out"), not3->getInput("in"));
-
+    //Link* not1Or1 = new Link(not1->getOutput("out"), or1->getInput("in1"));
+    //Link* not2Or1 = new Link(not2->getOutput("out"), or1->getInput("in2"));
+    //Link* or1Not3 = new Link(or1->getOutput("out"), not3->getInput("in"));
 
     NodeManager.addNode(true1);
     NodeManager.addNode(not1);
@@ -63,11 +60,10 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
-    NodeManager.addLink(true1Not1);
-    NodeManager.addLink(not1Or1);
-    NodeManager.addLink(not2Or1);
-    NodeManager.addLink(or1Not3);
-
+    //NodeManager.addLink(true1Not1);
+    //NodeManager.addLink(not1Or1);
+    //NodeManager.addLink(not2Or1);
+    //NodeManager.addLink(or1Not3);
 
     // projection size
     vec2 viewOffset = vec2(0);
@@ -80,9 +76,10 @@ int main(int argc, char const *argv[])
     vec2 mouseDiff = vec2(0);
     bool viewPanning = false;
 
-    std::optional<Node*> grabNode = {};
+    std::optional<Node *> grabNode = {};
     vec2 grabOffset = vec2(0);
 
+    std::optional<Connector *> startConnector = {};
 
     while (platform.processEvents())
     {
@@ -91,44 +88,81 @@ int main(int argc, char const *argv[])
         int width = platform.getWidth();
         int height = platform.getHeight();
         vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
-        // view panning and zooming
-        if(viewPanning){
-            mouseDiff = (mouse-pressedMousePos);
+        
+        // View matrix
+        mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
+        vec3 viewTranslate = vec3((1 - zoom) * width / 2.0f, (1 - zoom) * height / 2.0f, 0) + vec3(viewOffset + mouseDiff, 0);
+        view = translate(view, viewTranslate);
+        mat4 invView = scale(identity<4>(), vec3(1.0f/zoom, 1.0f/zoom, 0));
+        invView = translate(invView, -viewTranslate/zoom);
+        // Projection matrix
+        mat4 pmat(vec4(2.0f / (float)width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+
+        vec2 worldMouse = (invView * vec4(mouse, 0, 1)).xy;
+        
+        if (viewPanning)
+        {
+            mouseDiff = (mouse - pressedMousePos);
         }
 
-        if(platform.isMousePressed(MouseButton::LEFT)){
-            grabNode = NodeManager.getNodeAt(mouse);
-            if(grabNode)
-                grabOffset = grabNode.value()->pos-mouse;
-        } else if(platform.isMouseReleased(MouseButton::LEFT)){
+        if (platform.isMousePressed(MouseButton::LEFT))
+        {
+            grabNode = NodeManager.getNodeAt(worldMouse);
+            if (grabNode)
+                grabOffset = grabNode.value()->pos - worldMouse;
+            else
+                startConnector = NodeManager.getConnectorAt(worldMouse);
+        }
+        else if (platform.isMouseReleased(MouseButton::LEFT))
+        {
             grabNode = {};
+            if (startConnector)
+            {
+                auto endConnector = NodeManager.getConnectorAt(worldMouse);
+                if (endConnector)
+                    NodeManager.connect(startConnector.value(), endConnector.value());
+                startConnector = {};
+            }
         }
 
-        if(platform.isMousePressed(MouseButton::MIDDLE)){
+        if (platform.isMousePressed(MouseButton::RIGHT))
+        {
+            auto node = NodeManager.getNodeAt(worldMouse);
+            if (node)
+            {
+                NodeManager.removeNode(node.value());
+            }
+            else
+            {
+                auto c = NodeManager.getConnectorAt(worldMouse);
+                if (c)
+                {
+                    NodeManager.disconnectAll(c.value());
+                }
+            }
+        }
+
+        if (platform.isMousePressed(MouseButton::MIDDLE))
+        {
             viewPanning = true;
             pressedMousePos = vec2(platform.getMouseX(), platform.getMouseY());
         }
-        if(platform.isMouseReleased(MouseButton::MIDDLE)) {
+        if (platform.isMouseReleased(MouseButton::MIDDLE))
+        {
             viewPanning = false;
             viewOffset = viewOffset + mouseDiff;
             mouseDiff = vec2(0);
         }
         int delta = platform.getMouseWheel();
-        zoom += zoom*0.05f*delta;
-        if(zoom < 0.1f)
+        zoom += zoom * 0.05f * delta;
+        if (zoom < 0.1f)
             zoom = 0.1f;
-        else if(zoom >= 10)
+        else if (zoom >= 10)
             zoom = 10;
-        // View matrix
-        mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
-        view = translate(view, vec3((1-zoom)*width/2.0f, (1-zoom)*height/2.0f, 0)+vec3(viewOffset+mouseDiff, 0));
-        // Projection matrix
-        mat4 pmat(vec4( 2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
-        pmat = pmat;
 
-
-        if(grabNode){
-            grabNode.value()->pos = mouse + grabOffset;
+        if (grabNode)
+        {
+            grabNode.value()->pos = worldMouse + grabOffset;
         }
 
         glViewport(0, 0, width, height);
@@ -175,6 +209,11 @@ int main(int argc, char const *argv[])
         NodeManager.simulate();
         NodeManager.render(pmat, view);
 
+        if (startConnector)
+        {
+            NodeManager.drawTempLink(startConnector.value(), worldMouse, pmat, view);
+        }
+
         // wait time
         /*
         auto endTime = std::chrono::high_resolution_clock::now();
@@ -186,24 +225,26 @@ int main(int argc, char const *argv[])
         }
         */
         auto finalTime = std::chrono::high_resolution_clock::now();
-        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime-startTime).count();
-        int fps = (int) (1000000.0 / finalElapsedTime);
+        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime - startTime).count();
+        int fps = (int)(1000000.0 / finalElapsedTime);
         string text = std::to_string(fps);
-        font.text("fps : "+text, vec2(0), 20, vec3(1));
+        font.text("fps : " + text, vec2(0), 20, vec3(1));
 
         double currentFps = (1000000.0 / finalElapsedTime);
-        if(frame > 1){
-            avgFps = avgFps + (long double) (currentFps-avgFps)/ (long double) frame;
-        } else {
+        if (frame > 1)
+        {
+            avgFps = avgFps + (long double)(currentFps - avgFps) / (long double)frame;
+        }
+        else
+        {
             avgFps = currentFps;
         }
         frame++;
 
-        text = std::to_string((int) avgFps);
-        font.text("avg fps : "+text, vec2(0, 20), 20, vec3(1));
+        text = std::to_string((int)avgFps);
+        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
 
         font.render(pmat);
-        
 
         // End drawing
         platform.swapBuffers();
