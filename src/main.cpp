@@ -9,6 +9,7 @@
 #include <thread>
 #include <cmath>
 #include <optional>
+#include <thread>
 
 vec2 viewOffset = vec2(0);
 float zoom = 1.0f;
@@ -46,6 +47,7 @@ int main(int argc, char const *argv[])
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
     glEnable(GL_LINE_SMOOTH);
+
     //glEnable(GL_DEPTH_TEST);
     //glEnable(GL_STENCIL_TEST);
 
@@ -55,6 +57,7 @@ int main(int argc, char const *argv[])
 
     // Shaders
     Shader basicShader("basic");
+    Shader bezierShader("bezier");
 
     // Font
     Font &font = Font::getDefault();
@@ -208,12 +211,13 @@ int main(int argc, char const *argv[])
 
         // ---- NODE TEST ---- //
         NodeManager.simulate();
-        NodeManager.render(pmat, view);
-
         if (startConnector)
         {
             NodeManager.drawTempLink(startConnector.value(), worldMouse, pmat, view);
         }
+        NodeManager.render(pmat, view);
+
+        
 
         // wait time
         /*
@@ -246,27 +250,6 @@ int main(int argc, char const *argv[])
         font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
 
         font.render(pmat);
-
-        // spline rendering
-        float sv[] = {
-            0, height / 2.0f,
-            100, height / 2.0f,
-            100, height / 2.0f + 100,
-            200, height / 2.0f + 50,
-            400, height / 2.0f - 25,
-            600, height / 2.0f - 75,
-            100, height / 2.0f - 25};
-
-        VertexArray svao;
-        VertexBuffer svbo(sv, sizeof(sv));
-        VertexBufferLayout slayout;
-        slayout.push<float>(2);
-        svao.addBuffer(svbo, slayout);
-        basicShader.use();
-        basicShader.setMat4("projection", pmat);
-        basicShader.setMat4("view", view);
-        basicShader.setVec3("color", vec3(1));
-        glDrawArrays(GL_LINE_STRIP, 0, 7);
 
         // End drawing
         platform.swapBuffers();

@@ -245,6 +245,8 @@ Platform::Platform(const string &name, int width, int height)
         // Remove dummy context
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(dummyOpenGLContext);
+
+        
         wglMakeCurrent(win32State.hDC, win32State.glrc);
 
         PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");

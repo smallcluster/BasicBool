@@ -58,6 +58,7 @@ struct NodeStyle
     vec2 connectorMargin = vec2(4, 4);
     float inOutDist = 32;
     float nodeRadius = 8;
+    float nodeRediusOver = 10;
     float shadowSize = 16;
     float textOutletMargin = 4;
     Font &font;
@@ -306,7 +307,9 @@ private:
     Shader nodeShader;
     Shader nodeShadowShader;
     Shader nodeConnectorShader;
+    Shader bezierShader;
     NodeStyle &nodeStyle;
+    Texture lineTexture;
 
     void renderShadows(const mat4 &pmat, const mat4 &view)
     {
@@ -517,16 +520,24 @@ private:
                                              inPos.x, inPos.y, state,
                                              outPos.x, outPos.y, state});
         }
+        lineTexture.bind(0);
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
         layout.push<float>(1); // state
         vao.addBuffer(vbo, layout);
-        linkShader.use();
-        linkShader.setMat4("projection", pmat);
-        linkShader.setMat4("view", view);
+
+        //linkShader.use();
+        //linkShader.setMat4("projection", pmat);
+        //linkShader.setMat4("view", view);
+
+        bezierShader.use();
+        bezierShader.setMat4("projection", pmat);
+        bezierShader.setMat4("view", view);
+        bezierShader.setFloat("width", 4);
         glDrawArrays(GL_LINES, 0, 2 * links.size());
+
     }
 
 public:
@@ -534,6 +545,8 @@ public:
                     nodeShader("node"),
                     nodeShadowShader("node_shadow"),
                     nodeConnectorShader("node_connector"),
+                    bezierShader("bezier"),
+                    lineTexture("res/textures/line_sdf.png"),
                     nodeStyle(NodeStyle::getDefault())
     {
     }
@@ -585,10 +598,10 @@ public:
     // TODO : use glBufferSubData instead of rebuilding every frame ?
     void render(const mat4 &pmat, const mat4 &view)
     {
+        renderLinks(pmat, view);
         renderShadows(pmat, view);
         renderNodes(pmat, view);
         renderConnectors(pmat, view);
-        renderLinks(pmat, view);
         renderText(pmat, view);
     }
 
@@ -641,24 +654,37 @@ public:
     }
 
     void drawTempLink(Connector* c, vec2 mouse, const mat4& pmat, const mat4& view){
-        vec2 start = c->parent->pos + c->pos;
-        float state = c->state ? 1.0f : 0.0f;
+        
+        vec2 start;
+        vec2 end;
 
-        float vertices[] = {
+        if(c->isInput){
+            start = mouse;
+            end = c->parent->pos + c->pos;
+        } else {
+            start = c->parent->pos + c->pos;
+            end = mouse;
+        }
+
+        float state = c->state && !c->isInput ? 1.0f : 0.0f;
+
+        float sv[] = {
             start.x, start.y, state,
-            mouse.x, mouse.y, state
-        };
-
-        VertexArray vao;
-        VertexBuffer vbo(vertices, sizeof(vertices));
-        VertexBufferLayout layout;
-        layout.push<float>(2); // pos
-        layout.push<float>(1); // state
-        vao.addBuffer(vbo, layout);
-        linkShader.use();
-        linkShader.setMat4("projection", pmat);
-        linkShader.setMat4("view", view);
+            end.x, end.y, state};
+            
+        lineTexture.bind(0);
+        VertexArray svao;
+        VertexBuffer svbo(sv, sizeof(sv));
+        VertexBufferLayout slayout;
+        slayout.push<float>(2);
+        slayout.push<float>(1);
+        svao.addBuffer(svbo, slayout);
+        bezierShader.use();
+        bezierShader.setMat4("projection", pmat);
+        bezierShader.setMat4("view", view);
+        bezierShader.setFloat("width", 4);
         glDrawArrays(GL_LINES, 0, 2);
+
     }
 
     bool connect(Connector *c1, Connector *c2){
