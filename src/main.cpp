@@ -10,6 +10,27 @@
 #include <cmath>
 #include <optional>
 
+vec2 viewOffset = vec2(0);
+float zoom = 1.0f;
+vec2 oldMouse = vec2(0);
+vec2 mouse = vec2(0);
+bool viewPanning = false;
+
+mat4 getViewMatrix()
+{
+    mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
+    vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
+    view = translate(view, viewTranslate);
+    return view;
+}
+mat4 getInvViewMatrix()
+{
+    mat4 invView = scale(identity<4>(), vec3(1.0f / zoom, 1.0f / zoom, 0));
+    vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
+    invView = translate(invView, -viewTranslate / zoom);
+    return invView;
+}
+
 int main(int argc, char const *argv[])
 {
     // Math vector & matrix packing check
@@ -36,7 +57,7 @@ int main(int argc, char const *argv[])
     Shader basicShader("basic");
 
     // Font
-    Font font("roboto_regular_sdf");
+    Font &font = Font::getDefault();
 
     NodeManager NodeManager;
 
@@ -48,62 +69,51 @@ int main(int argc, char const *argv[])
     Node *or1 = new OrNode(orpos);
     Node *not3 = new NotNode(orpos + vec2(200, 0));
 
-    //Link* true1Not1 = new Link(true1->getOutput("out"), not1->getInput("in"));
-
-    //Link* not1Or1 = new Link(not1->getOutput("out"), or1->getInput("in1"));
-    //Link* not2Or1 = new Link(not2->getOutput("out"), or1->getInput("in2"));
-    //Link* or1Not3 = new Link(or1->getOutput("out"), not3->getInput("in"));
-
     NodeManager.addNode(true1);
     NodeManager.addNode(not1);
     NodeManager.addNode(not2);
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
-    //NodeManager.addLink(true1Not1);
-    //NodeManager.addLink(not1Or1);
-    //NodeManager.addLink(not2Or1);
-    //NodeManager.addLink(or1Not3);
-
     // projection size
-    vec2 viewOffset = vec2(0);
-    float zoom = 1.0;
-
     double avgFps = 0;
     unsigned long long frame = 0;
-
-    vec2 pressedMousePos = vec2(0);
-    vec2 mouseDiff = vec2(0);
-    bool viewPanning = false;
-
     std::optional<Node *> grabNode = {};
     vec2 grabOffset = vec2(0);
-
     std::optional<Connector *> startConnector = {};
 
     while (platform.processEvents())
     {
         auto startTime = std::chrono::high_resolution_clock::now();
-
         int width = platform.getWidth();
         int height = platform.getHeight();
-        vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
-        
-        // View matrix
-        mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
-        vec3 viewTranslate = vec3((1 - zoom) * width / 2.0f, (1 - zoom) * height / 2.0f, 0) + vec3(viewOffset + mouseDiff, 0);
-        view = translate(view, viewTranslate);
-        mat4 invView = scale(identity<4>(), vec3(1.0f/zoom, 1.0f/zoom, 0));
-        invView = translate(invView, -viewTranslate/zoom);
-        // Projection matrix
-        mat4 pmat(vec4(2.0f / (float)width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
-
-        vec2 worldMouse = (invView * vec4(mouse, 0, 1)).xy;
-        
+        // update mouse pos
+        oldMouse = mouse;
+        mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        // move view
         if (viewPanning)
         {
-            mouseDiff = (mouse - pressedMousePos);
+            viewOffset = viewOffset + mouse - oldMouse;
         }
+        int delta = platform.getMouseWheel();
+        // update zoom
+        if (delta != 0)
+        {
+            vec2 oldWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+            zoom += zoom * 0.05f * delta;
+            if (zoom < 0.1f)
+                zoom = 0.1f;
+            else if (zoom >= 10)
+                zoom = 10;
+            vec2 newWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+            viewOffset = viewOffset + (newWorldMouse - oldWorldMouse) * zoom;
+        }
+
+        mat4 view = getViewMatrix();
+        vec2 worldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+
+        // Projection matrix
+        mat4 pmat(vec4(2.0f / (float)width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
 
         if (platform.isMousePressed(MouseButton::LEFT))
         {
@@ -145,20 +155,11 @@ int main(int argc, char const *argv[])
         if (platform.isMousePressed(MouseButton::MIDDLE))
         {
             viewPanning = true;
-            pressedMousePos = vec2(platform.getMouseX(), platform.getMouseY());
         }
         if (platform.isMouseReleased(MouseButton::MIDDLE))
         {
             viewPanning = false;
-            viewOffset = viewOffset + mouseDiff;
-            mouseDiff = vec2(0);
         }
-        int delta = platform.getMouseWheel();
-        zoom += zoom * 0.05f * delta;
-        if (zoom < 0.1f)
-            zoom = 0.1f;
-        else if (zoom >= 10)
-            zoom = 10;
 
         if (grabNode)
         {
@@ -245,6 +246,27 @@ int main(int argc, char const *argv[])
         font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
 
         font.render(pmat);
+
+        // spline rendering
+        float sv[] = {
+            0, height / 2.0f,
+            100, height / 2.0f,
+            100, height / 2.0f + 100,
+            200, height / 2.0f + 50,
+            400, height / 2.0f - 25,
+            600, height / 2.0f - 75,
+            100, height / 2.0f - 25};
+
+        VertexArray svao;
+        VertexBuffer svbo(sv, sizeof(sv));
+        VertexBufferLayout slayout;
+        slayout.push<float>(2);
+        svao.addBuffer(svbo, slayout);
+        basicShader.use();
+        basicShader.setMat4("projection", pmat);
+        basicShader.setMat4("view", view);
+        basicShader.setVec3("color", vec3(1));
+        glDrawArrays(GL_LINE_STRIP, 0, 7);
 
         // End drawing
         platform.swapBuffers();

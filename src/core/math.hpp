@@ -37,6 +37,8 @@ constexpr Vector<n> operator+(const Vector<n> &v1, const Vector<n> &v2)
         vec[i] = v1[i] + v2[i];
     return vec;
 }
+
+
 template <int n>
 constexpr Vector<n> operator-(const Vector<n> &v1, const Vector<n> &v2)
 {
@@ -45,6 +47,7 @@ constexpr Vector<n> operator-(const Vector<n> &v1, const Vector<n> &v2)
         vec[i] = v1[i] - v2[i];
     return vec;
 }
+
 
 template <int n>
 constexpr Vector<n> operator*(const Vector<n> &v1, const Vector<n> &v2)
