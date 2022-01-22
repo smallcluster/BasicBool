@@ -107,7 +107,7 @@ void main(){
     // TODO : use precise point to line dist instead of a broken texture
 
 
-    float dist = (0.4-texture(tex, uv).a)*32;
+    float dist = (0.5-texture(tex, uv).a)*32;
     vec2 duv = fwidth(uv);
     float dtex = length(duv*textureSize(tex, 0));
     float pixelDist = dist * 2 / dtex;
