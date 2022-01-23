@@ -303,13 +303,11 @@ class NodeManager
 private:
     std::vector<Node *> nodes;
     std::vector<Link *> links;
-    Shader linkShader;
     Shader nodeShader;
     Shader nodeShadowShader;
     Shader nodeConnectorShader;
-    Shader bezierShader;
+    Shader linkShader;
     NodeStyle &nodeStyle;
-    Texture lineTexture;
 
     void renderShadows(const mat4 &pmat, const mat4 &view)
     {
@@ -520,7 +518,6 @@ private:
                                              inPos.x, inPos.y, state,
                                              outPos.x, outPos.y, state});
         }
-        lineTexture.bind(0);
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
         VertexBufferLayout layout;
@@ -532,21 +529,19 @@ private:
         //linkShader.setMat4("projection", pmat);
         //linkShader.setMat4("view", view);
 
-        bezierShader.use();
-        bezierShader.setMat4("projection", pmat);
-        bezierShader.setMat4("view", view);
-        bezierShader.setFloat("width", 4);
+        linkShader.use();
+        linkShader.setMat4("projection", pmat);
+        linkShader.setMat4("view", view);
+        linkShader.setFloat("width", nodeStyle.connectorRadius/2.0f);
         glDrawArrays(GL_LINES, 0, 2 * links.size());
 
     }
 
 public:
-    NodeManager() : linkShader("link"),
-                    nodeShader("node"),
+    NodeManager() : nodeShader("node"),
                     nodeShadowShader("node_shadow"),
                     nodeConnectorShader("node_connector"),
-                    bezierShader("bezier"),
-                    lineTexture("res/textures/line_sdf.png"),
+                    linkShader("link"),
                     nodeStyle(NodeStyle::getDefault())
     {
     }
@@ -672,17 +667,16 @@ public:
             start.x, start.y, state,
             end.x, end.y, state};
             
-        lineTexture.bind(0);
         VertexArray svao;
         VertexBuffer svbo(sv, sizeof(sv));
         VertexBufferLayout slayout;
         slayout.push<float>(2);
         slayout.push<float>(1);
         svao.addBuffer(svbo, slayout);
-        bezierShader.use();
-        bezierShader.setMat4("projection", pmat);
-        bezierShader.setMat4("view", view);
-        bezierShader.setFloat("width", 4);
+        linkShader.use();
+        linkShader.setMat4("projection", pmat);
+        linkShader.setMat4("view", view);
+        linkShader.setFloat("width", nodeStyle.connectorRadius/2.0f);
         glDrawArrays(GL_LINES, 0, 2);
 
     }

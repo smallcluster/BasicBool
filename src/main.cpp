@@ -57,7 +57,6 @@ int main(int argc, char const *argv[])
 
     // Shaders
     Shader basicShader("basic");
-    Shader bezierShader("bezier");
 
     // Font
     Font &font = Font::getDefault();
