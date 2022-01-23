@@ -143,7 +143,7 @@ public:
 
     virtual void update() = 0;
 
-    vec2 getTextPos() const 
+    vec2 getTextPos() const
     {
         return pos + textPos;
     }
@@ -160,7 +160,7 @@ private:
         vec2 inputsSize = getConnectorSize(false);
         vec2 outputsSize = getConnectorSize(true);
         size = vec2(std::max(headerWidth, inputsSize.x + style.inOutDist + outputsSize.x), headerHeight + std::max(inputsSize.y, outputsSize.y));
-        
+
         headerSize = vec2(size.x, headerHeight);
         doConnectorLayout(false);
         doConnectorLayout(true);
@@ -307,19 +307,48 @@ private:
     Shader nodeShadowShader;
     Shader nodeConnectorShader;
     Shader linkShader;
+    Shader basicShader;
     NodeStyle &nodeStyle;
+
+    std::vector<Node *> visibleNodes;
+    std::vector<Link *> visibleLinks;
+
+    void cullNodes(const vec2 &camstart, const vec2 &camend)
+    {
+        for (Node *node : nodes)
+        {
+            vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
+            vec2 size = node->size + vec2(2 * nodeStyle.shadowSize);
+            if (pos.x + size.x >= camstart.x && pos.x <= camend.x && pos.y + size.y >= camstart.y && pos.y <= camend.y)
+                visibleNodes.push_back(node);
+        }
+    }
+
+    void cullLinks(const vec2 &camstart, const vec2 &camend)
+    {
+        for (Link *link : links)
+        {
+            vec2 start = link->input->parent->pos + link->input->pos;
+            vec2 end = link->output->parent->pos + link->output->pos;
+            // construct bounding box
+            vec2 boxstart = vec2(std::min(start.x, end.x), std::min(start.y, end.y));
+            vec2 boxeend = vec2(std::max(start.x, end.x), std::max(start.y, end.y));
+            if (boxstart.x <= camend.x && boxstart.y <= camend.y && boxeend.x >= camstart.x && boxeend.y >= camstart.y)
+                visibleLinks.push_back(link);
+        }
+    }
 
     void renderShadows(const mat4 &pmat, const mat4 &view)
     {
-        if (nodes.empty())
+        if (visibleNodes.empty())
             return;
 
         std::vector<float> vertices;
-        vertices.reserve(nodes.size() * 6);
+        vertices.reserve(visibleNodes.size() * 6);
         std::vector<unsigned int> indices;
-        indices.reserve(nodes.size() * 6);
+        indices.reserve(visibleNodes.size() * 6);
         int i = 0;
-        for (const Node *node : nodes)
+        for (const Node *node : visibleNodes)
         {
             vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
             vec2 size = node->size + vec2(nodeStyle.shadowSize * 2);
@@ -345,19 +374,19 @@ private:
         nodeShadowShader.setMat4("view", view);
         nodeShadowShader.setFloat("smoothing", nodeStyle.shadowSize);
         nodeShadowShader.setFloat("radius", nodeStyle.nodeRadius);
-        glDrawElements(GL_TRIANGLES, nodes.size() * 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, visibleNodes.size() * 6, GL_UNSIGNED_INT, 0);
     }
 
     void renderNodes(const mat4 &pmat, const mat4 &view)
     {
-        if (nodes.empty())
+        if (visibleNodes.empty())
             return;
         std::vector<float> vertices;
-        vertices.reserve(nodes.size() * 7);
+        vertices.reserve(visibleNodes.size() * 7);
         std::vector<unsigned int> indices;
-        indices.reserve(nodes.size() * 6);
+        indices.reserve(visibleNodes.size() * 6);
         int i = 0;
-        for (const Node *node : nodes)
+        for (const Node *node : visibleNodes)
         {
             vec2 pos = node->pos;
             vec2 size = node->size;
@@ -384,21 +413,23 @@ private:
         nodeShader.setMat4("projection", pmat);
         nodeShader.setMat4("view", view);
         nodeShader.setFloat("radius", nodeStyle.nodeRadius);
-        glDrawElements(GL_TRIANGLES, nodes.size() * 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, visibleNodes.size() * 6, GL_UNSIGNED_INT, 0);
     }
 
     void renderText(const mat4 &pmat, const mat4 &view)
     {
-        for (const Node *node : nodes)
+        if (visibleNodes.empty())
+            return;
+        for (const Node *node : visibleNodes)
         {
             nodeStyle.font.text(node->name, node->getTextPos(), nodeStyle.headerTextSize, vec3(1));
             for (const Connector *c : node->inputs)
             {
-                nodeStyle.font.text(c->name, c->parent->pos+c->textPos, nodeStyle.connectorTextSize, vec3(1));
+                nodeStyle.font.text(c->name, c->parent->pos + c->textPos, nodeStyle.connectorTextSize, vec3(1));
             }
             for (const Connector *c : node->outputs)
             {
-                nodeStyle.font.text(c->name, c->parent->pos+c->textPos, nodeStyle.connectorTextSize, vec3(1));
+                nodeStyle.font.text(c->name, c->parent->pos + c->textPos, nodeStyle.connectorTextSize, vec3(1));
             }
         }
         nodeStyle.font.render(pmat, view);
@@ -406,18 +437,18 @@ private:
 
     void renderConnectors(const mat4 &pmat, const mat4 &view)
     {
-        if (nodes.empty())
+        if (visibleNodes.empty())
             return;
 
         std::vector<float> vertices;
         std::vector<unsigned int> indices;
         int i = 0;
-        for (const Node *node : nodes)
+        for (const Node *node : visibleNodes)
         {
 
             for (const Connector *c : node->inputs)
             {
-                vec2 pos = c->parent->pos+c->pos;
+                vec2 pos = c->parent->pos + c->pos;
                 float state = c->state ? 1.0f : 0.0f;
                 vertices.insert(vertices.end(), {
                                                     // pos                      // uv   // radius   // state
@@ -451,7 +482,7 @@ private:
             }
             for (const Connector *c : node->outputs)
             {
-                vec2 pos = c->parent->pos+c->pos;
+                vec2 pos = c->parent->pos + c->pos;
                 float state = c->state ? 1.0f : 0.0f;
                 vertices.insert(vertices.end(), {
                                                     // pos                      // uv   // radius   // state
@@ -500,15 +531,14 @@ private:
         glDrawElements(GL_TRIANGLES, i * 6, GL_UNSIGNED_INT, 0);
     }
 
-    // TODO : render line with thickness on geometry shader
     void renderLinks(const mat4 &pmat, const mat4 &view)
     {
-        if (links.empty())
+        if (visibleLinks.empty())
             return;
         std::vector<float> vertices;
-        vertices.reserve(links.size() * 6);
+        vertices.reserve(visibleLinks.size() * 6);
 
-        for (const Link *li : links)
+        for (const Link *li : visibleLinks)
         {
             float state = li->input->state ? 1.0f : 0.0f;
 
@@ -525,16 +555,11 @@ private:
         layout.push<float>(1); // state
         vao.addBuffer(vbo, layout);
 
-        //linkShader.use();
-        //linkShader.setMat4("projection", pmat);
-        //linkShader.setMat4("view", view);
-
         linkShader.use();
         linkShader.setMat4("projection", pmat);
         linkShader.setMat4("view", view);
-        linkShader.setFloat("width", nodeStyle.connectorRadius/2.0f);
-        glDrawArrays(GL_LINES, 0, 2 * links.size());
-
+        linkShader.setFloat("width", nodeStyle.connectorRadius / 2.0f);
+        glDrawArrays(GL_LINES, 0, 2 * visibleLinks.size());
     }
 
 public:
@@ -542,6 +567,7 @@ public:
                     nodeShadowShader("node_shadow"),
                     nodeConnectorShader("node_connector"),
                     linkShader("link"),
+                    basicShader("basic"),
                     nodeStyle(NodeStyle::getDefault())
     {
     }
@@ -590,24 +616,54 @@ public:
         return false;
     }
 
-    // TODO : use glBufferSubData instead of rebuilding every frame ?
-    void render(const mat4 &pmat, const mat4 &view)
+    void render(const mat4 &pmat, const mat4 &view, const vec2 &camstart, const vec2 &camend)
     {
+        cullNodes(camstart, camend);
+        cullLinks(camstart, camend);
+
         renderLinks(pmat, view);
         renderShadows(pmat, view);
         renderNodes(pmat, view);
         renderConnectors(pmat, view);
         renderText(pmat, view);
-    }
 
+        // TODO : remove this
+        nodeStyle.font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(0));
+        nodeStyle.font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(0));
+        nodeStyle.font.render(pmat);
+
+        visibleNodes.clear();
+        visibleLinks.clear();
+    }
 
     void simulate()
     {
+
         // Nodes THEN links
+
+#if MULTI_CORES
+
+#pragma omp parallel for
+        for (int i = 0; i < nodes.size(); i++)
+        {
+            nodes[i]->update();
+        }
+
+#pragma omp parallel for
+        for (int i = 0; i < links.size(); i++)
+        {
+            links[i]->update();
+        }
+
+#else
+
         for (Node *n : nodes)
             n->update();
         for (Link *li : links)
             li->update();
+
+#endif
+   
     }
 
     std::optional<Node *> getNodeAt(vec2 mouse)
@@ -622,25 +678,29 @@ public:
         return {};
     }
 
-    std::optional<Connector*> getConnectorAt(vec2 mouse){
+    std::optional<Connector *> getConnectorAt(vec2 mouse)
+    {
         for (Node *node : nodes)
         {
             vec2 size = node->size;
             vec2 pos = node->pos;
-            if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y){
+            if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y)
+            {
                 // check inputs
-                for(Connector* c : node->inputs){
+                for (Connector *c : node->inputs)
+                {
                     vec2 cpos = node->pos + c->pos;
                     float r = nodeStyle.connectorRadius;
-                    if(distanceSq(mouse, cpos) <= r*r)
+                    if (distanceSq(mouse, cpos) <= r * r)
                         return c;
                 }
 
                 // check outputs
-                for(Connector* c : node->outputs){
+                for (Connector *c : node->outputs)
+                {
                     vec2 cpos = node->pos + c->pos;
                     float r = nodeStyle.connectorRadius;
-                    if(distanceSq(mouse, cpos) <= r*r)
+                    if (distanceSq(mouse, cpos) <= r * r)
                         return c;
                 }
             }
@@ -648,15 +708,19 @@ public:
         return {};
     }
 
-    void drawTempLink(Connector* c, vec2 mouse, const mat4& pmat, const mat4& view){
-        
+    void drawTempLink(Connector *c, vec2 mouse, const mat4 &pmat, const mat4 &view)
+    {
+
         vec2 start;
         vec2 end;
 
-        if(c->isInput){
+        if (c->isInput)
+        {
             start = mouse;
             end = c->parent->pos + c->pos;
-        } else {
+        }
+        else
+        {
             start = c->parent->pos + c->pos;
             end = mouse;
         }
@@ -666,7 +730,7 @@ public:
         float sv[] = {
             start.x, start.y, state,
             end.x, end.y, state};
-            
+
         VertexArray svao;
         VertexBuffer svbo(sv, sizeof(sv));
         VertexBufferLayout slayout;
@@ -676,24 +740,29 @@ public:
         linkShader.use();
         linkShader.setMat4("projection", pmat);
         linkShader.setMat4("view", view);
-        linkShader.setFloat("width", nodeStyle.connectorRadius/2.0f);
+        linkShader.setFloat("width", nodeStyle.connectorRadius / 2.0f);
         glDrawArrays(GL_LINES, 0, 2);
-
     }
 
-    bool connect(Connector *c1, Connector *c2){
-        if(!c1->isInput && c2->isInput){
-            if(!(c2->links.empty())){
-                Link* li = c2->links[0];
+    bool connect(Connector *c1, Connector *c2)
+    {
+        if (!c1->isInput && c2->isInput)
+        {
+            if (!(c2->links.empty()))
+            {
+                Link *li = c2->links[0];
                 links.erase(std::remove(links.begin(), links.end(), li), links.end());
                 delete li;
             }
             links.push_back(new Link(c1, c2));
             return true;
-        } else if(c1->isInput && !c2->isInput){
+        }
+        else if (c1->isInput && !c2->isInput)
+        {
 
-            if(!(c1->links.empty())){
-                Link* li = c1->links[0];
+            if (!(c1->links.empty()))
+            {
+                Link *li = c1->links[0];
                 links.erase(std::remove(links.begin(), links.end(), li), links.end());
                 delete li;
             }
@@ -703,19 +772,22 @@ public:
         return false;
     }
 
-    void disconnectAll(Connector *c){
-        std::vector<Link*> temp = c->links;
-        for(Link* li : temp){
+    void disconnectAll(Connector *c)
+    {
+        std::vector<Link *> temp = c->links;
+        for (Link *li : temp)
+        {
             links.erase(std::remove(links.begin(), links.end(), li), links.end());
             delete li;
         }
     }
 
-    void removeNode(Node* node){
+    void removeNode(Node *node)
+    {
         // remove & delete links
-        for(Connector* c : node->inputs)
+        for (Connector *c : node->inputs)
             disconnectAll(c);
-        for(Connector* c : node->outputs)
+        for (Connector *c : node->outputs)
             disconnectAll(c);
         // remove & delete node
         nodes.erase(std::remove(nodes.begin(), nodes.end(), node), nodes.end());

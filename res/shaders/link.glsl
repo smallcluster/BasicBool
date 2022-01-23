@@ -27,13 +27,14 @@ out float state;
 
 
 const float step = 1.0/(RES-1);
+const float smooting = 0.5;
 
 vec2 bezier(float t, vec2 start, vec2 end, vec2 control1, vec2 control2){
     return (1.0-t)*(1.0-t)*(1.0-t)*start + 3*(1.0-t)*(1.0-t)*t*control1 + 3*(1.0-t)*t*t*control2 + t*t*t*end;
 }
 
 void main(){
-    float radius = width/2.0;
+    float radius = width/2.0+smooting;
     vec2 start = vec2(gl_in[0].gl_Position.x, gl_in[0].gl_Position.y);
     vec2 end = vec2(gl_in[1].gl_Position.x, gl_in[1].gl_Position.y);
 
@@ -108,10 +109,8 @@ void main(){
 
     float d = (width/2.0-smooting-abs(uv.y*width-width/2.0));
     float dw = fwidth(d);
-
     float pixelDist = d / dw;
     float alpha = 1-clamp(0.5 - pixelDist, 0.0, 1.0);
-
 
     FragColor = vec4((state == 0.0 ? falseColor : trueColor), alpha);
 }

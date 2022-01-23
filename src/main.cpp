@@ -77,6 +77,30 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
+    /*
+    for(int i=0; i < 10000; i++){
+
+        Node* n1 = new TrueNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Node* n2 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Link* n1n2 = new Link(n1->getOutput("out"), n2->getInput("in"));
+        NodeManager.addLink(n1n2);
+        NodeManager.addNode(n1);
+        NodeManager.addNode(n2);
+
+
+        Node* n3 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Node* n4 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Link* n3n4 = new Link(n3->getOutput("out"), n4->getInput("in"));
+        Link* n1n3 = new Link(n1->getOutput("out"), n3->getInput("in"));
+        NodeManager.addLink(n3n4);
+        NodeManager.addLink(n1n3);
+        NodeManager.addNode(n3);
+        NodeManager.addNode(n4);
+
+        
+    }
+    */
+
     // projection size
     double avgFps = 0;
     unsigned long long frame = 0;
@@ -112,7 +136,8 @@ int main(int argc, char const *argv[])
         }
 
         mat4 view = getViewMatrix();
-        vec2 worldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+        mat4 invView = getInvViewMatrix();
+        vec2 worldMouse = (invView * vec4(mouse, 0, 1)).xy;
 
         // Projection matrix
         mat4 pmat(vec4(2.0f / (float)width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
@@ -150,6 +175,8 @@ int main(int argc, char const *argv[])
                 if (c)
                 {
                     NodeManager.disconnectAll(c.value());
+                } else {
+                    NodeManager.addNode(new OrNode(worldMouse));
                 }
             }
         }
@@ -214,7 +241,7 @@ int main(int argc, char const *argv[])
         {
             NodeManager.drawTempLink(startConnector.value(), worldMouse, pmat, view);
         }
-        NodeManager.render(pmat, view);
+        NodeManager.render(pmat, view, (invView*vec4(0, 0, 0, 1)).xy , (invView*vec4(width, height, 0, 1)).xy);
 
         
 
@@ -232,7 +259,7 @@ int main(int argc, char const *argv[])
         long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime - startTime).count();
         int fps = (int)(1000000.0 / finalElapsedTime);
         string text = std::to_string(fps);
-        font.text("fps : " + text, vec2(0), 20, vec3(1));
+        font.text("fps : " + text, vec2(0), 20, vec3(0));
 
         double currentFps = (1000000.0 / finalElapsedTime);
         if (frame > 1)
@@ -246,7 +273,7 @@ int main(int argc, char const *argv[])
         frame++;
 
         text = std::to_string((int)avgFps);
-        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
+        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(0));
 
         font.render(pmat);
 

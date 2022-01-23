@@ -9,3 +9,5 @@ using std::string;
 #elif defined(__linux__)
     #define PLATFORM_LINUX 1
 #endif
+
+#define MULTI_CORES 0

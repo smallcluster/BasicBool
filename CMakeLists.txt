@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.9)
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -61,6 +61,10 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC external/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+# OPENMP
+find_package(OpenMP REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 
 target_include_directories(${PROJECT_NAME} PUBLIC external/stb)
 
