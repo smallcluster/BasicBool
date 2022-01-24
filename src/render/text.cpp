@@ -175,12 +175,13 @@ void Font::text(const string &textString, vec2 position, float size, vec3 color)
 {
     Text t;
     t.fontSize = size;
-    t.position = position+vec2((m_padding.x*2)/size,0);
+    t.position = position + vec2((m_padding.x * 2) / size, 0);
     t.textString = textString;
     t.color = color;
     m_texts.push_back(t);
 }
 
+/*
 void Font::render(const mat4 &pmat, const mat4 &view)
 {
     // Nothing to render
@@ -190,9 +191,9 @@ void Font::render(const mat4 &pmat, const mat4 &view)
     // build geometry
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
-    unsigned int nbChars = 0;
     vec2 texDim = vec2(m_texture.getWidth(), m_texture.getHeight());
 
+    unsigned int nbChars = 0;
     for (const Text &txt : m_texts)
     {
 
@@ -217,6 +218,7 @@ void Font::render(const mat4 &pmat, const mat4 &view)
             {
                 pos.x = xstart;
                 pos.y += m_lineHeight * scale;
+                continue;
             }
 
             if (m_glyphs.count(c) == 0)
@@ -225,7 +227,6 @@ void Font::render(const mat4 &pmat, const mat4 &view)
                 g = m_glyphs[c];
 
             // build quad for this char
-
             // pos
             vec2 p0 = pos + (g.offset - m_padding.xy) * scale;
             vec2 p1 = p0 + vec2(g.dim.x + 2 * m_padding.x, 0) * scale;
@@ -279,6 +280,7 @@ void Font::render(const mat4 &pmat, const mat4 &view)
 
             // advance writer head
             pos.x += g.advance * scale;
+
             // count nb of chars
             nbChars++;
         }
@@ -297,7 +299,91 @@ void Font::render(const mat4 &pmat, const mat4 &view)
     layout.push<float>(3); // color
     vao.addBuffer(vbo, layout);
     vao.addBuffer(ebo);
+
     glDrawElements(GL_TRIANGLES, nbChars * 6, GL_UNSIGNED_INT, 0);
+
     m_texts.clear(); // remove all draw calls
 }
+*/
 
+void Font::render(const mat4 &pmat, const mat4 &view)
+{
+    // Nothing to render
+    if (m_texts.empty())
+        return;
+
+    // get total vertices
+    unsigned int nbMaxChars = 0;
+    for (const Text &txt : m_texts)
+        nbMaxChars += txt.textString.size();
+
+    // build geometry
+    std::vector<float> vertices;
+    vertices.reserve(nbMaxChars * 11);
+    vec2 texDim = vec2(m_texture.getWidth(), m_texture.getHeight());
+
+    unsigned int nbChars = 0;
+    for (const Text &txt : m_texts)
+    {
+        // Text infos
+        float scale = txt.fontSize / m_size;
+        const string &s = txt.textString;
+        vec3 color = txt.color;
+        vec2 pos = txt.position; // writer head
+
+        float xstart = pos.x;
+        for (int j = 0; j < s.length(); j++)
+        {
+            char c = s[j];
+            // check if char is in supported charset
+            // else default to unknown char
+            Glyph g;
+
+            // new line
+            if (c == '\n')
+            {
+                pos.x = xstart;
+                pos.y += m_lineHeight * scale;
+                continue;
+            }
+
+            if (m_glyphs.count(c) == 0)
+                g = m_glyphs[(char)127];
+            else
+                g = m_glyphs[c];
+
+            // build quad for this char
+            // pos
+            vec2 start = pos + (g.offset - m_padding.xy) * scale;
+            vec2 size = (vec2(g.dim.x, g.dim.y) + 2 * m_padding.xy) * scale;
+
+            // uvs
+            vec2 uvStart = vec2(g.pos.x, g.pos.y) / texDim;
+            vec2 uvSize = vec2(g.dim.x, g.dim.y) / texDim;
+
+            // append data
+            vertices.insert(vertices.end(), {start.x, start.y, size.x, size.y,
+                                             uvStart.x, uvStart.y, uvSize.x, uvSize.y,
+                                             color.r, color.g, color.b});
+
+            // advance writer head
+            pos.x += g.advance * scale;
+            nbChars++;
+        }
+    }
+    textShader.use();
+    textShader.setMat4("projection", pmat);
+    textShader.setMat4("view", view);
+    m_texture.bind(0);
+    VertexArray vao;
+    VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
+    VertexBufferLayout layout;
+    layout.push<float>(4); // rect
+    layout.push<float>(4); // rectUV
+    layout.push<float>(3); // color
+    vao.addBuffer(vbo, layout);
+
+    glDrawArrays(GL_POINTS, 0, nbChars);
+
+    m_texts.clear(); // remove all draw calls
+}

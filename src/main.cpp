@@ -77,7 +77,7 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
-    /*
+    
     for(int i=0; i < 10000; i++){
 
         Node* n1 = new TrueNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
@@ -99,7 +99,8 @@ int main(int argc, char const *argv[])
 
         
     }
-    */
+    
+    
 
     // projection size
     double avgFps = 0;

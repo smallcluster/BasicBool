@@ -7,6 +7,7 @@
 #include "render/shapes.hpp"
 #include <cmath>
 #include <optional>
+#include <array>
 
 class Node;
 struct Link;
@@ -656,14 +657,12 @@ public:
         }
 
 #else
-
         for (Node *n : nodes)
             n->update();
         for (Link *li : links)
             li->update();
 
 #endif
-   
     }
 
     std::optional<Node *> getNodeAt(vec2 mouse)

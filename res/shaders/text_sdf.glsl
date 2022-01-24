@@ -1,19 +1,63 @@
 #SHADER VERTEX
 #version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aUV;
+layout (location = 0) in vec4 aRect;   // (x,y,w,h) in world space
+layout (location = 1) in vec4 aRectUV; // (x,y,w,h) in [0,1]
 layout (location = 2) in vec3 aColor;
+
+out vec4 rectUV;
+out vec3 vscolor;
+
+void main(){
+    gl_Position = aRect; // (x,y,w,h)
+    rectUV = aRectUV;
+    vscolor = aColor;
+}
+
+
+#SHADER GEOMETRY
+#version 330 core
+layout (points) in;
+layout (triangle_strip, max_vertices = 4) out; 
 
 uniform mat4 projection;
 uniform mat4 view;
+
+in vec3 vscolor[];
+in vec4 rectUV[];
 
 out vec2 uv;
 out vec3 color;
 
 void main(){
-    gl_Position = projection*view*vec4(aPos.x, aPos.y, 0.0, 1.0);
-    uv = aUV;
-    color = aColor;
+    vec4 rect = gl_in[0].gl_Position;
+    mat4 transfrom = projection*view;
+
+    // p1
+    gl_Position = transfrom*vec4(rect.x, rect.y+rect.w, 0, 1);
+    uv = vec2(rectUV[0].x, rectUV[0].y+rectUV[0].w);
+    color = vscolor[0];
+    EmitVertex();
+
+    // p2
+    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y+rect.w, 0, 1);
+    uv = vec2(rectUV[0].x+rectUV[0].z, rectUV[0].y+rectUV[0].w);
+    color = vscolor[0];
+    EmitVertex();
+
+    // p3
+    gl_Position = transfrom*vec4(rect.x, rect.y, 0, 1);
+    uv = rectUV[0].xy;
+    color = vscolor[0];
+    EmitVertex();
+
+    // p4
+    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y, 0, 1);
+    uv = vec2(rectUV[0].x+rectUV[0].z, rectUV[0].y);
+    color = vscolor[0];
+    EmitVertex();
+    
+
+    EndPrimitive();
 }
 
 
