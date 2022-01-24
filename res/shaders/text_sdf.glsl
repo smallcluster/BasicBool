@@ -32,28 +32,26 @@ void main(){
     vec4 rect = gl_in[0].gl_Position;
     mat4 transfrom = projection*view;
 
+    color = vscolor[0];
+
     // p1
     gl_Position = transfrom*vec4(rect.x, rect.y+rect.w, 0, 1);
     uv = vec2(rectUV[0].x, rectUV[0].y+rectUV[0].w);
-    color = vscolor[0];
     EmitVertex();
 
     // p2
     gl_Position = transfrom*vec4(rect.x+rect.z, rect.y+rect.w, 0, 1);
     uv = vec2(rectUV[0].x+rectUV[0].z, rectUV[0].y+rectUV[0].w);
-    color = vscolor[0];
     EmitVertex();
 
     // p3
     gl_Position = transfrom*vec4(rect.x, rect.y, 0, 1);
     uv = rectUV[0].xy;
-    color = vscolor[0];
     EmitVertex();
 
     // p4
     gl_Position = transfrom*vec4(rect.x+rect.z, rect.y, 0, 1);
     uv = vec2(rectUV[0].x+rectUV[0].z, rectUV[0].y);
-    color = vscolor[0];
     EmitVertex();
     
 

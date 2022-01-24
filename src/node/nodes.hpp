@@ -343,78 +343,53 @@ private:
     {
         if (visibleNodes.empty())
             return;
-
         std::vector<float> vertices;
-        vertices.reserve(visibleNodes.size() * 6);
-        std::vector<unsigned int> indices;
-        indices.reserve(visibleNodes.size() * 6);
-        int i = 0;
+        vertices.reserve(visibleNodes.size());
         for (const Node *node : visibleNodes)
         {
             vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
-            vec2 size = node->size + vec2(nodeStyle.shadowSize * 2);
-            vertices.insert(vertices.end(), {// pos                                               // uv // size
-                                             pos.x, pos.y, 0, 0, size.x, size.y,
-                                             pos.x + size.x, pos.y, 1, 0, size.x, size.y,
-                                             pos.x + size.x, pos.y + size.y, 1, 1, size.x, size.y,
-                                             pos.x, pos.y + size.y, 0, 1, size.x, size.y});
-            unsigned int n = (i++) * 4;
-            indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+            vec2 size = node->size + vec2(nodeStyle.shadowSize*2);
+            vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y});
         }
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
-        layout.push<float>(2); // pos
-        layout.push<float>(2); // uv
-        layout.push<float>(2); // size
+        layout.push<float>(4); // rect
         vao.addBuffer(vbo, layout);
-        vao.addBuffer(ebo);
         nodeShadowShader.use();
         nodeShadowShader.setMat4("projection", pmat);
         nodeShadowShader.setMat4("view", view);
         nodeShadowShader.setFloat("smoothing", nodeStyle.shadowSize);
         nodeShadowShader.setFloat("radius", nodeStyle.nodeRadius);
-        glDrawElements(GL_TRIANGLES, visibleNodes.size() * 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_POINTS, 0, visibleNodes.size());
     }
 
     void renderNodes(const mat4 &pmat, const mat4 &view)
     {
         if (visibleNodes.empty())
             return;
+
         std::vector<float> vertices;
-        vertices.reserve(visibleNodes.size() * 7);
-        std::vector<unsigned int> indices;
-        indices.reserve(visibleNodes.size() * 6);
-        int i = 0;
+        vertices.reserve(visibleNodes.size());
+
         for (const Node *node : visibleNodes)
         {
             vec2 pos = node->pos;
             vec2 size = node->size;
             float headerHeight = node->headerSize.y;
-            vertices.insert(vertices.end(), {// pos                                 // uv  // size               // header height
-                                             pos.x, pos.y, 0, 0, size.x, size.y, headerHeight,
-                                             pos.x + size.x, pos.y, 1, 0, size.x, size.y, headerHeight,
-                                             pos.x + size.x, pos.y + size.y, 1, 1, size.x, size.y, headerHeight,
-                                             pos.x, pos.y + size.y, 0, 1, size.x, size.y, headerHeight});
-            unsigned int n = (i++) * 4;
-            indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+            vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, headerHeight});
         }
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
-        layout.push<float>(2); // pos
-        layout.push<float>(2); // uv
-        layout.push<float>(2); // size
+        layout.push<float>(4); // rect
         layout.push<float>(1); // headerHeight
         vao.addBuffer(vbo, layout);
-        vao.addBuffer(ebo);
         nodeShader.use();
         nodeShader.setMat4("projection", pmat);
         nodeShader.setMat4("view", view);
         nodeShader.setFloat("radius", nodeStyle.nodeRadius);
-        glDrawElements(GL_TRIANGLES, visibleNodes.size() * 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_POINTS, 0, visibleNodes.size());
     }
 
     void renderText(const mat4 &pmat, const mat4 &view)
@@ -442,7 +417,6 @@ private:
             return;
 
         std::vector<float> vertices;
-        std::vector<unsigned int> indices;
         int i = 0;
         for (const Node *node : visibleNodes)
         {
@@ -451,85 +425,26 @@ private:
             {
                 vec2 pos = c->parent->pos + c->pos;
                 float state = c->state ? 1.0f : 0.0f;
-                vertices.insert(vertices.end(), {
-                                                    // pos                      // uv   // radius   // state
-                                                    pos.x - nodeStyle.connectorRadius,
-                                                    pos.y - nodeStyle.connectorRadius,
-                                                    0,
-                                                    0,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x + nodeStyle.connectorRadius,
-                                                    pos.y - nodeStyle.connectorRadius,
-                                                    1,
-                                                    0,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x + nodeStyle.connectorRadius,
-                                                    pos.y + nodeStyle.connectorRadius,
-                                                    1,
-                                                    1,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x - nodeStyle.connectorRadius,
-                                                    pos.y + nodeStyle.connectorRadius,
-                                                    0,
-                                                    1,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                });
-                unsigned int n = (i++) * 4;
-                indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+                vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle.connectorRadius, state});
+                i++;
             }
             for (const Connector *c : node->outputs)
             {
                 vec2 pos = c->parent->pos + c->pos;
                 float state = c->state ? 1.0f : 0.0f;
-                vertices.insert(vertices.end(), {
-                                                    // pos                      // uv   // radius   // state
-                                                    pos.x - nodeStyle.connectorRadius,
-                                                    pos.y - nodeStyle.connectorRadius,
-                                                    0,
-                                                    0,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x + nodeStyle.connectorRadius,
-                                                    pos.y - nodeStyle.connectorRadius,
-                                                    1,
-                                                    0,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x + nodeStyle.connectorRadius,
-                                                    pos.y + nodeStyle.connectorRadius,
-                                                    1,
-                                                    1,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                    pos.x - nodeStyle.connectorRadius,
-                                                    pos.y + nodeStyle.connectorRadius,
-                                                    0,
-                                                    1,
-                                                    nodeStyle.connectorRadius,
-                                                    state,
-                                                });
-                unsigned int n = (i++) * 4;
-                indices.insert(indices.end(), {n, n + 1, n + 2, n, n + 2, n + 3});
+                vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle.connectorRadius, state});
+                i++;
             }
         }
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
-        ElementBuffer ebo(&indices[0], sizeof(unsigned int) * indices.size());
         VertexBufferLayout layout;
-        layout.push<float>(2); // pos
-        layout.push<float>(2); // uv
-        layout.push<float>(1); // radius
-        layout.push<float>(1); // state
+        layout.push<float>(4); // (x,y,r,state)
         vao.addBuffer(vbo, layout);
-        vao.addBuffer(ebo);
         nodeConnectorShader.use();
         nodeConnectorShader.setMat4("projection", pmat);
         nodeConnectorShader.setMat4("view", view);
-        glDrawElements(GL_TRIANGLES, i * 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_POINTS, 0, i);
     }
 
     void renderLinks(const mat4 &pmat, const mat4 &view)

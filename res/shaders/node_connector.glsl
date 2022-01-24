@@ -1,9 +1,15 @@
 #SHADER VERTEX
 #version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aUV;
-layout (location = 2) in float aRadius;
-layout (location = 3) in float aStatus;
+layout (location = 0) in vec4 data; // (x,y,r,state)
+
+void main(){
+    gl_Position = data;
+}
+
+#SHADER GEOMETRY
+#version 330 core
+layout (points) in;
+layout (triangle_strip, max_vertices = 4) out; 
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -13,10 +19,34 @@ out float radius;
 out float status;
 
 void main(){
-    gl_Position = projection*view*vec4(aPos.x, aPos.y, 0.0, 1.0);
-    uv = aUV;
-    radius = aRadius;
-    status = aStatus;
+
+    vec4 data = gl_in[0].gl_Position;
+    mat4 transfrom = projection*view;
+
+    radius = data.z;
+    status = data.w;
+
+    // p1
+    gl_Position = transfrom*vec4(data.x-radius, data.y+radius, 0, 1);
+    uv = vec2(0,1);
+    EmitVertex();
+
+    // p2
+    gl_Position = transfrom*vec4(data.x+radius, data.y+radius, 0, 1);
+    uv = vec2(1,1);
+    EmitVertex();
+
+    // p3
+    gl_Position = transfrom*vec4(data.x-radius, data.y-radius, 0, 1);
+    uv = vec2(0,0);
+    EmitVertex();
+
+    // p4
+    gl_Position = transfrom*vec4(data.x+radius, data.y-radius, 0, 1);
+    uv = vec2(1,0);
+    EmitVertex();
+
+    EndPrimitive();
 }
 
 
