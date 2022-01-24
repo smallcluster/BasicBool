@@ -86,6 +86,7 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
+    
     /*
     for (int i = 0; i < 10000; i++)
     {
@@ -107,6 +108,7 @@ int main(int argc, char const *argv[])
         NodeManager.addNode(n4);
     }
     */
+    
 
     // projection size
     double avgFps = 0;
