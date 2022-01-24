@@ -10,4 +10,4 @@ using std::string;
     #define PLATFORM_LINUX 1
 #endif
 
-#define MULTI_CORES 1
+#define MULTI_CORES 0

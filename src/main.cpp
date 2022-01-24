@@ -11,6 +11,8 @@
 #include <optional>
 #include <thread>
 
+using namespace std::chrono_literals;
+
 vec2 viewOffset = vec2(0);
 float zoom = 1.0f;
 vec2 oldMouse = vec2(0);
@@ -63,6 +65,13 @@ int main(int argc, char const *argv[])
 
     NodeManager NodeManager;
 
+    unsigned int tickPerSec = 1;
+    auto simStartTime = std::chrono::system_clock::now();
+    auto tickTime = 1000000000ns / tickPerSec;
+    bool beginUpdateDone = false;
+
+    bool unlimitedTickTime = false;
+
     vec2 orpos = vec2(platform.getWidth() / 2.0f, platform.getHeight() / 2.0f);
 
     Node *true1 = new TrueNode(orpos + vec2(-350, -100));
@@ -77,30 +86,27 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
-    
-    for(int i=0; i < 10000; i++){
+    /*
+    for (int i = 0; i < 10000; i++)
+    {
 
-        Node* n1 = new TrueNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Node* n2 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Link* n1n2 = new Link(n1->getOutput("out"), n2->getInput("in"));
+        Node *n1 = new TrueNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Node *n2 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Link *n1n2 = new Link(n1->getOutput("out"), n2->getInput("in"));
         NodeManager.addLink(n1n2);
         NodeManager.addNode(n1);
         NodeManager.addNode(n2);
 
-
-        Node* n3 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Node* n4 = new NotNode(25.0f*vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Link* n3n4 = new Link(n3->getOutput("out"), n4->getInput("in"));
-        Link* n1n3 = new Link(n1->getOutput("out"), n3->getInput("in"));
+        Node *n3 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Node *n4 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+        Link *n3n4 = new Link(n3->getOutput("out"), n4->getInput("in"));
+        Link *n1n3 = new Link(n1->getOutput("out"), n3->getInput("in"));
         NodeManager.addLink(n3n4);
         NodeManager.addLink(n1n3);
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
-
-        
     }
-    
-    
+    */
 
     // projection size
     double avgFps = 0;
@@ -176,7 +182,9 @@ int main(int argc, char const *argv[])
                 if (c)
                 {
                     NodeManager.disconnectAll(c.value());
-                } else {
+                }
+                else
+                {
                     NodeManager.addNode(new OrNode(worldMouse));
                 }
             }
@@ -236,15 +244,42 @@ int main(int argc, char const *argv[])
         vao.bind();
         glDrawArrays(GL_LINES, 0, 2 * (nx + ny + 2));
 
-        // ---- NODE TEST ---- //
-        NodeManager.simulate();
         if (startConnector)
         {
             NodeManager.drawTempLink(startConnector.value(), worldMouse, pmat, view);
         }
-        NodeManager.render(pmat, view, (invView*vec4(0, 0, 0, 1)).xy , (invView*vec4(width, height, 0, 1)).xy);
 
-        
+        // ---- simulation ----
+
+        // start cycle
+        if (!unlimitedTickTime)
+        {
+            if (!beginUpdateDone)
+            {
+                NodeManager.beginUpdate();
+                beginUpdateDone = true;
+                simStartTime = std::chrono::system_clock::now();
+            }
+            auto time = std::chrono::system_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time - simStartTime);
+            float t = (float)((double)duration.count() / (double)tickTime.count());
+            if (t > 1)
+                t = 1;
+            // update animation
+            NodeManager.setProgress(t);
+            // end cycle
+            if (duration >= tickTime)
+            {
+                NodeManager.endUpdate();
+                beginUpdateDone = false;
+            }
+        } else {
+            NodeManager.beginUpdate();
+            NodeManager.setProgress(1);
+            NodeManager.endUpdate();
+        } 
+
+        NodeManager.render(pmat, view, (invView * vec4(0, 0, 0, 1)).xy, (invView * vec4(width, height, 0, 1)).xy);
 
         // wait time
         /*
@@ -260,7 +295,7 @@ int main(int argc, char const *argv[])
         long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime - startTime).count();
         int fps = (int)(1000000.0 / finalElapsedTime);
         string text = std::to_string(fps);
-        font.text("fps : " + text, vec2(0), 20, vec3(0));
+        font.text("fps : " + text, vec2(0), 20, vec3(1));
 
         double currentFps = (1000000.0 / finalElapsedTime);
         if (frame > 1)
@@ -274,7 +309,7 @@ int main(int argc, char const *argv[])
         frame++;
 
         text = std::to_string((int)avgFps);
-        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(0));
+        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
 
         font.render(pmat);
 

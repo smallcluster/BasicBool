@@ -1,13 +1,16 @@
 #SHADER VERTEX
 #version 330 core
 layout (location = 0) in vec2 aPos;
-layout (location = 1) in float aState;
+layout (location = 1) in float aT;
+layout (location = 2) in float aStartTrue;
 
-out float vsState;
+out float vsT;
+out float vsStartTrue;
 
 void main(){
     gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
-    vsState = aState;
+    vsT = aT;
+    vsStartTrue = aStartTrue;
 }
 
 #SHADER GEOMETRY
@@ -21,9 +24,12 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform float width;
 
+in float vsT[];
+in float vsStartTrue[];
+
 out vec2 uv;
-in float vsState[];
-out float state;
+out float t;
+out float startTrue;
 
 
 const float step = 1.0/(RES-1);
@@ -46,14 +52,15 @@ void main(){
 
     mat4 transfrom = projection*view;
 
+    t = vsT[0];
+    startTrue = vsStartTrue[0];
+
     // first vert
     gl_Position = transfrom*vec4(start + ortho*radius, 0, 1);
     uv = vec2(0,0);
-    state = vsState[0];
     EmitVertex();
     gl_Position = transfrom*vec4(start - ortho*radius, 0, 1);
     uv = vec2(0,1);
-    state = vsState[0];
     EmitVertex();
     
     // inside vert
@@ -69,23 +76,19 @@ void main(){
         vec2 v = normalize(o1+o2);
 
         gl_Position = transfrom*vec4(p2 + v*radius, 0, 1);
-        uv = vec2(i+1, 0);
-        state = vsState[0];
+        uv = vec2((i+1)*step, 0);
         EmitVertex();
         gl_Position = transfrom*vec4(p2 - v*radius, 0, 1);
-        uv = vec2(i+1, 1);
-        state = vsState[0];
+        uv = vec2((i+1)*step, 1);
         EmitVertex();
     }
     
     // last vert
     gl_Position = transfrom*vec4(end + ortho*radius, 0, 1);
-    uv = vec2(RES-1,0);
-    state = vsState[0];
+    uv = vec2(1,0);
     EmitVertex();
     gl_Position = transfrom*vec4(end - ortho*radius, 0, 1);
-    uv = vec2(RES-1,1);
-    state = vsState[0];
+    uv = vec2(1,1);
     EmitVertex();
 
     EndPrimitive();
@@ -97,6 +100,8 @@ void main(){
 out vec4 FragColor;
 in vec2 uv;
 in float state;
+in float t;
+in float startTrue;
 
 const vec3 trueColor = vec3(0, 1, 0);
 const vec3 falseColor = vec3(1, 0, 0);
@@ -112,5 +117,10 @@ void main(){
     float pixelDist = d / dw;
     float alpha = 1-clamp(0.5 - pixelDist, 0.0, 1.0);
 
-    FragColor = vec4((state == 0.0 ? falseColor : trueColor), alpha);
+    vec3 startColor = mix(falseColor, trueColor, startTrue);
+    vec3 endColor = mix(trueColor, falseColor, startTrue);
+
+    vec3 color = mix(startColor, endColor, step(t, uv.x));
+
+    FragColor = vec4(color, alpha);
 }

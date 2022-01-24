@@ -29,6 +29,10 @@ struct Link
 {
     Connector *input;
     Connector *output;
+    float t = 0.5f;
+
+    bool state = false;
+    bool nextState = false;
     Link(Connector *in, Connector *out) : input(in), output(out)
     {
         in->links.push_back(this);
@@ -36,23 +40,26 @@ struct Link
     }
     ~Link()
     {
-        output->state = false;
         input->links.erase(std::remove(input->links.begin(), input->links.end(), this), input->links.end());
         output->links.erase(std::remove(output->links.begin(), output->links.end(), this), output->links.end());
-    }
-    void update()
-    {
-        output->state = input->state;
-    }
-    void reset()
-    {
-        input->state = false;
         output->state = false;
+    }
+
+    void fetchNextState()
+    {
+        nextState = input->state;
+    }
+    void propagate()
+    {
+        output->state = nextState;
+        state = nextState; // current state
     }
 };
 
 struct NodeStyle
 {
+    vec3 trueColor = vec3(0, 1, 0);
+    vec3 falseColor = vec3(1, 0, 0);
     float headerTextSize = 20;
     float connectorTextSize = 16;
     float connectorRadius = 8;
@@ -226,10 +233,12 @@ public:
     TrueNode(vec2 pos, NodeStyle &style) : Node("TRUE", pos, style)
     {
         addOutput("out");
+        getOutput("out")->state = true;
     }
     TrueNode(vec2 pos) : Node("TRUE", pos)
     {
         addOutput("out");
+        getOutput("out")->state = true;
     }
     void update() override
     {
@@ -244,11 +253,13 @@ public:
     {
         addInput("in");
         addOutput("out");
+        getOutput("out")->state = true;
     }
     NotNode(vec2 pos) : Node("NOT", pos)
     {
         addInput("in");
         addOutput("out");
+        getOutput("out")->state = true;
     }
     void update() override
     {
@@ -348,7 +359,7 @@ private:
         for (const Node *node : visibleNodes)
         {
             vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
-            vec2 size = node->size + vec2(nodeStyle.shadowSize*2);
+            vec2 size = node->size + vec2(nodeStyle.shadowSize * 2);
             vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y});
         }
         VertexArray vao;
@@ -452,23 +463,26 @@ private:
         if (visibleLinks.empty())
             return;
         std::vector<float> vertices;
-        vertices.reserve(visibleLinks.size() * 6);
+        vertices.reserve(visibleLinks.size() * 8);
 
         for (const Link *li : visibleLinks)
         {
-            float state = li->input->state ? 1.0f : 0.0f;
-
             vec2 inPos = li->input->parent->pos + li->input->pos;
             vec2 outPos = li->output->parent->pos + li->output->pos;
-            vertices.insert(vertices.end(), {// pos                                  // state
-                                             inPos.x, inPos.y, state,
-                                             outPos.x, outPos.y, state});
+
+            float startTrue = li->state == false && li->nextState == true || li->state == true && li->nextState == true;
+            float t = li->state == false && li->nextState == true || li->state == true && li->nextState == false ? li->t : 1.0;
+
+            vertices.insert(vertices.end(), {
+                                             inPos.x, inPos.y, t, startTrue,
+                                             outPos.x, outPos.y, t, startTrue});
         }
         VertexArray vao;
         VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
         VertexBufferLayout layout;
         layout.push<float>(2); // pos
-        layout.push<float>(1); // state
+        layout.push<float>(1); // t
+        layout.push<float>(1); // startTrue
         vao.addBuffer(vbo, layout);
 
         linkShader.use();
@@ -544,39 +558,60 @@ public:
         renderText(pmat, view);
 
         // TODO : remove this
-        nodeStyle.font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(0));
-        nodeStyle.font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(0));
+        nodeStyle.font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(1));
+        nodeStyle.font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(1));
         nodeStyle.font.render(pmat);
 
         visibleNodes.clear();
         visibleLinks.clear();
     }
 
-    void simulate()
+    void beginUpdate()
     {
-
-        // Nodes THEN links
-
 #if MULTI_CORES
-
 #pragma omp parallel for
         for (int i = 0; i < nodes.size(); i++)
         {
             nodes[i]->update();
         }
-
 #pragma omp parallel for
         for (int i = 0; i < links.size(); i++)
         {
-            links[i]->update();
+            links[i]->fetchNextState();
         }
-
 #else
-        for (Node *n : nodes)
-            n->update();
+        for (Node *node : nodes)
+            node->update();
         for (Link *li : links)
-            li->update();
+            li->fetchNextState();
+#endif
+    }
 
+    void endUpdate()
+    {
+#if MULTI_CORES
+#pragma omp parallel for
+        for (int i = 0; i < links.size(); i++)
+        {
+            links[i]->propagate();
+        }
+#else
+        for (Link *li : links)
+            li->propagate();
+#endif
+    }
+
+    void setProgress(float t)
+    {
+#if MULTI_CORES
+#pragma omp parallel for
+        for (int i = 0; i < links.size(); i++)
+        {
+            links[i]->t = t;
+        }
+#else
+        for (Link *li : links)
+            li->t = t;
 #endif
     }
 
@@ -639,16 +674,16 @@ public:
             end = mouse;
         }
 
-        float state = c->state && !c->isInput ? 1.0f : 0.0f;
 
         float sv[] = {
-            start.x, start.y, state,
-            end.x, end.y, state};
+            start.x, start.y, 1.0f, 0.0f,
+            end.x, end.y, 1.0f, 0.0f};
 
         VertexArray svao;
         VertexBuffer svbo(sv, sizeof(sv));
         VertexBufferLayout slayout;
         slayout.push<float>(2);
+        slayout.push<float>(1);
         slayout.push<float>(1);
         svao.addBuffer(svbo, slayout);
         linkShader.use();
