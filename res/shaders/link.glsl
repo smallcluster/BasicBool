@@ -103,9 +103,8 @@ in float state;
 in float t;
 in float startTrue;
 
-const vec3 trueColor = vec3(0, 1, 0);
-const vec3 falseColor = vec3(1, 0, 0);
-
+uniform vec3 trueColor;
+uniform vec3 falseColor;
 uniform float width;
 
 const float smooting = 0.5;

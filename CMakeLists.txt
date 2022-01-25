@@ -27,6 +27,8 @@ add_executable(
     src/render/text.cpp
 
     # NODE
+    src/node/node_system.hpp
+    src/node/node_system.cpp
     src/node/nodes.hpp
 
     # GUI

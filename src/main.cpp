@@ -4,6 +4,7 @@
 #include "render/shapes.hpp"
 #include "core/math.hpp"
 #include "render/text.hpp"
+#include "node/node_system.hpp"
 #include "node/nodes.hpp"
 #include <chrono>
 #include <thread>
@@ -87,7 +88,7 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(not3);
 
     
-    /*
+    
     for (int i = 0; i < 10000; i++)
     {
 
@@ -107,7 +108,7 @@ int main(int argc, char const *argv[])
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
     }
-    */
+    
     
 
     // projection size

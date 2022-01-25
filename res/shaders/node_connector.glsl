@@ -58,8 +58,9 @@ in vec2 uv;
 in float radius;
 in float status;
 
-const vec3 falseColor = vec3(1, 0, 0);
-const vec3 trueColor = vec3(0, 1, 0);
+uniform vec3 falseColor;
+uniform vec3 trueColor;
+
 const float smoothing = 4.0;
 
 

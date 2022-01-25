@@ -354,8 +354,9 @@ void Font::render(const mat4 &pmat, const mat4 &view)
 
             // build quad for this char
             // pos
-            vec2 start = pos + (g.offset - m_padding.xy) * scale;
-            vec2 size = (vec2(g.dim.x, g.dim.y) + 2 * m_padding.xy) * scale;
+            //vec2 start = pos + (g.offset - m_padding.xy) * scale;
+            vec2 start = pos + g.offset * scale;
+            vec2 size = (vec2(g.dim.x, g.dim.y) + m_padding.xy) * scale;
 
             // uvs
             vec2 uvStart = vec2(g.pos.x, g.pos.y) / texDim;
