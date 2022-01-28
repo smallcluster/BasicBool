@@ -30,6 +30,7 @@ add_executable(
     src/node/node_system.hpp
     src/node/node_system.cpp
     src/node/nodes.hpp
+    src/node/look_and_feel.hpp
 
     # GUI
     src/gui/gui.hpp

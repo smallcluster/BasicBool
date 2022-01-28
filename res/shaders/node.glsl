@@ -2,12 +2,15 @@
 #version 330 core
 layout (location = 0) in vec4 aRect;
 layout (location = 1) in float aHeaderHeight;
+layout (location = 2) in float aSelected;
 
+out float vsSelected;
 out float vsHeaderHeight;
 
 void main(){
     gl_Position = aRect;
     vsHeaderHeight = aHeaderHeight;
+    vsSelected = aSelected;
 }
 
 #SHADER GEOMETRY
@@ -19,13 +22,15 @@ uniform mat4 projection;
 uniform mat4 view;
 
 in float vsHeaderHeight[];
+in float vsSelected[];
 
 out vec2 uv;
 out vec2 size;
 out float headerHeight;
+out float selected;
 
 void main(){
-
+    selected = vsSelected[0];
     vec4 rect = gl_in[0].gl_Position;
     mat4 transfrom = projection*view;
 
@@ -63,11 +68,12 @@ out vec4 FragColor;
 in vec2 uv;
 in vec2 size;
 in float headerHeight;
+in float selected;
 
 uniform float radius;
 uniform vec3 headerColor;
+uniform vec3 selectedColor;
 uniform vec3 bodyColor;
-
 const float smoothing = 4;
 
 
@@ -89,7 +95,7 @@ void main(){
     float pixelDist = d * 2 / dd;
     float alpha = clamp(0.5 - pixelDist, 0.0, 1.0);
     float header = 1-step(headerHeight, p.y);
-    vec4 col = vec4(headerColor*header+bodyColor*(1-header), alpha);
+    vec4 col = vec4( (selected == 1.0 ? selectedColor : headerColor)*header+bodyColor*(1-header), alpha);
     FragColor = col;
 }
 

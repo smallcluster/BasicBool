@@ -1,9 +1,13 @@
 #SHADER VERTEX
 #version 330 core
 layout (location = 0) in vec4 aRect;
+layout (location = 1) in float aSelected;
+
+out float vsSelected;
 
 void main(){
     gl_Position = aRect;
+    vsSelected = aSelected;
 }
 
 #SHADER GEOMETRY
@@ -14,11 +18,14 @@ layout (triangle_strip, max_vertices = 4) out;
 uniform mat4 projection;
 uniform mat4 view;
 
+in float vsSelected[];
+
 out vec2 uv;
 out vec2 size;
+out float selected;
 
 void main(){
-
+    selected = vsSelected[0];
     vec4 rect = gl_in[0].gl_Position;
     mat4 transfrom = projection*view;
 
@@ -54,10 +61,11 @@ out vec4 FragColor;
 
 in vec2 uv;
 in vec2 size;
+in float selected;
 
 uniform float smoothing;
 uniform float radius;
-
+uniform vec3 selectedColor;
 
 float rect(vec2 p, vec2 c, float w, float h, float r){
     vec2 size = vec2(w-r, h-r);
@@ -80,6 +88,6 @@ void main(){
     float res = smoothstep(0., smoothing, d);
 
     // final result
-    FragColor = mix(vec4(0, 0, 0, 0.25), vec4(0), res);
+    FragColor = mix(vec4(selectedColor*selected, 0.25), vec4(0), res);
 }
 

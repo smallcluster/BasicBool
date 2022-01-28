@@ -14,6 +14,9 @@
 
 using namespace std::chrono_literals;
 
+// ---------------------------------------------------------------------
+
+//-----------------------------------------------------------------------
 vec2 viewOffset = vec2(0);
 float zoom = 1.0f;
 vec2 oldMouse = vec2(0);
@@ -70,6 +73,8 @@ int main(int argc, char const *argv[])
     auto simStartTime = std::chrono::system_clock::now();
     auto tickTime = 1000000000ns / tickPerSec;
     bool beginUpdateDone = false;
+    bool boxSelection = false;
+    vec2 boxSelectionStart = vec2(0);
 
     bool unlimitedTickTime = false;
 
@@ -87,7 +92,6 @@ int main(int argc, char const *argv[])
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
-    
     /*
     for (int i = 0; i < 10000; i++)
     {
@@ -108,8 +112,6 @@ int main(int argc, char const *argv[])
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
     }*/
-    
-    
 
     // projection size
     double avgFps = 0;
@@ -125,6 +127,8 @@ int main(int argc, char const *argv[])
         int height = platform.getHeight();
         // update mouse pos
         oldMouse = mouse;
+        vec2 oldWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+
         mouse = vec2(platform.getMouseX(), platform.getMouseY());
         // move view
         if (viewPanning)
@@ -135,14 +139,14 @@ int main(int argc, char const *argv[])
         // update zoom
         if (delta != 0)
         {
-            vec2 oldWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
+            vec2 tempMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
             zoom += zoom * 0.05f * delta;
             if (zoom < 0.1f)
                 zoom = 0.1f;
             else if (zoom >= 10)
                 zoom = 10;
             vec2 newWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
-            viewOffset = viewOffset + (newWorldMouse - oldWorldMouse) * zoom;
+            viewOffset = viewOffset + (newWorldMouse - tempMouse) * zoom;
         }
 
         mat4 view = getViewMatrix();
@@ -154,11 +158,27 @@ int main(int argc, char const *argv[])
 
         if (platform.isMousePressed(MouseButton::LEFT))
         {
-            grabNode = NodeManager.getNodeAt(worldMouse);
-            if (grabNode)
-                grabOffset = grabNode.value()->pos - worldMouse;
-            else
-                startConnector = NodeManager.getConnectorAt(worldMouse);
+            startConnector = NodeManager.getConnectorAt(worldMouse);
+
+            if (!startConnector)
+            {
+                grabNode = NodeManager.getNodeAt(worldMouse);
+                if (grabNode)
+                {
+                    grabOffset = grabNode.value()->pos - worldMouse;
+                    if (!NodeManager.nodeIsSelected(grabNode.value()))
+                    {
+                        NodeManager.deselectAll();
+                    }
+                    NodeManager.selectNode(grabNode.value());
+                }
+                else
+                {
+                    NodeManager.deselectAll();
+                    boxSelection = true;
+                    boxSelectionStart = worldMouse;
+                }
+            }
         }
         else if (platform.isMouseReleased(MouseButton::LEFT))
         {
@@ -170,26 +190,35 @@ int main(int argc, char const *argv[])
                     NodeManager.connect(startConnector.value(), endConnector.value());
                 startConnector = {};
             }
+            if (boxSelection)
+            {
+                boxSelection = false;
+                vec2 boxSelectionEnd = worldMouse;
+                vec2 boxStart = vec2(std::min(boxSelectionStart.x, boxSelectionEnd.x), std::min(boxSelectionStart.y, boxSelectionEnd.y));
+                vec2 boxEnd = vec2(std::max(boxSelectionStart.x, boxSelectionEnd.x), std::max(boxSelectionStart.y, boxSelectionEnd.y));
+                NodeManager.boxSelect(boxStart, boxEnd);
+            }
         }
 
         if (platform.isMousePressed(MouseButton::RIGHT))
         {
-            auto node = NodeManager.getNodeAt(worldMouse);
-            if (node)
+            auto c = NodeManager.getConnectorAt(worldMouse);
+            if (c)
             {
-                NodeManager.removeNode(node.value());
+                NodeManager.disconnectAll(c.value());
             }
             else
             {
-                auto c = NodeManager.getConnectorAt(worldMouse);
-                if (c)
+                auto node = NodeManager.getNodeAt(worldMouse);
+                if (node)
                 {
-                    NodeManager.disconnectAll(c.value());
+                    NodeManager.selectNode(node.value());
+                    NodeManager.removeSelected();
                 }
-                else
-                {
-                    NodeManager.addNode(new OrNode(worldMouse));
-                }
+
+
+
+
             }
         }
 
@@ -204,7 +233,8 @@ int main(int argc, char const *argv[])
 
         if (grabNode)
         {
-            grabNode.value()->pos = worldMouse + grabOffset;
+            //grabNode.value()->pos = worldMouse + grabOffset;
+            NodeManager.moveSelectedNodes(worldMouse - oldWorldMouse);
         }
 
         glViewport(0, 0, width, height);
@@ -276,13 +306,20 @@ int main(int argc, char const *argv[])
                 NodeManager.endUpdate();
                 beginUpdateDone = false;
             }
-        } else {
+        }
+        else
+        {
             NodeManager.beginUpdate();
             NodeManager.setProgress(1);
             NodeManager.endUpdate();
-        } 
+        }
 
         NodeManager.render(pmat, view, (invView * vec4(0, 0, 0, 1)).xy, (invView * vec4(width, height, 0, 1)).xy);
+
+        if (boxSelection)
+        {
+            NodeManager.drawBoxSelection(boxSelectionStart, worldMouse, pmat, view);
+        }
 
         // wait time
         /*

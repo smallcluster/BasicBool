@@ -99,7 +99,6 @@ void main(){
 
 out vec4 FragColor;
 in vec2 uv;
-in float state;
 in float t;
 in float startTrue;
 

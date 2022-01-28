@@ -1,11 +1,8 @@
 #pragma once
 #include "core/defines.hpp"
 #include "core/math.hpp"
-#include <unordered_map>
-#include "render/backend.hpp"
-#include "render/text.hpp"
-#include "render/shapes.hpp"
-#include <cmath>
+#include "look_and_feel.hpp"
+#include <functional>
 #include <optional>
 
 class Node;
@@ -35,82 +32,33 @@ struct Link
     ~Link();
     void fetchNextState();
     void propagate();
-};
-
-struct NodeStyle
-{
-    vec3 trueColor = vec3(0, 1, 0);
-    vec3 falseColor = vec3(1, 0, 0);
-    vec3 headerColor = vec3(0, 0, 1);
-    vec3 bodyColor = vec3(0.2);
-    vec3 headerTextColor = vec3(1);
-    vec3 connectorTextColor = vec3(1);
-    float headerTextSize = 20;
-    float connectorTextSize = 16;
-    float connectorRadius = 8;
-    vec2 connectorMargin = vec2(4, 4);
-    float inOutDist = 32;
-    float nodeRadius = 8;
-    float shadowSize = 16;
-    float textOutletMargin = 4;
-    Font &font;
-
-    NodeStyle(Font &font);
-    NodeStyle();
-    static NodeStyle &getDefault();
+    void reset();
 };
 
 class Node
 {
-
 public:
     std::vector<Connector *> inputs;
     std::vector<Connector *> outputs;
+    bool selected = false;
     string name;
     vec2 pos;
+    vec2 textPos; // relative to it's pos
     vec2 headerSize;
     vec2 size;
-    Node(string name, vec2 pos, NodeStyle &style);
     Node(string name, vec2 pos);
     ~Node();
-
     bool addOutput(string name);
     bool addInput(string name);
     Connector *getInput(string name);
     Connector *getOutput(string name);
-    vec2 getTextPos() const;
-
     virtual void update() = 0;
-
-private:
-    NodeStyle &style;
-    vec2 textPos; // relative to it's pos
-    void doLayout();
-    vec2 getConnectorSize(bool output);
-    void doConnectorLayout(bool output);
+    virtual void reset() = 0;
 };
+
 
 class NodeManager
 {
-private:
-    std::vector<Node *> nodes;
-    std::vector<Link *> links;
-    Shader nodeShader;
-    Shader nodeShadowShader;
-    Shader nodeConnectorShader;
-    Shader linkShader;
-    Shader basicShader;
-    NodeStyle &nodeStyle;
-    std::vector<Node *> visibleNodes;
-    std::vector<Link *> visibleLinks;
-    void cullNodes(const vec2 &camstart, const vec2 &camend);
-    void cullLinks(const vec2 &camstart, const vec2 &camend);
-    void renderShadows(const mat4 &pmat, const mat4 &view);
-    void renderNodes(const mat4 &pmat, const mat4 &view);
-    void renderText(const mat4 &pmat, const mat4 &view);
-    void renderConnectors(const mat4 &pmat, const mat4 &view);
-    void renderLinks(const mat4 &pmat, const mat4 &view);
-
 public:
     NodeManager();
     ~NodeManager();
@@ -126,5 +74,50 @@ public:
     bool connect(Connector *c1, Connector *c2);
     void disconnectAll(Connector *c);
     void removeNode(Node *node);
+    void setLookAndFeel(std::shared_ptr<NodeStyle> style);
+    void reset();
 
+    void moveSelectedNodes(vec2 offset);
+    void boxSelect(vec2 start, vec2 end);
+    void deselectAll();
+    void selectNode(Node* node);
+    void deselectNode(Node* node);
+    bool nodeIsSelected(Node* node);
+    void drawBoxSelection(vec2 start, vec2 end, const mat4 &pmat, const mat4 &view);
+    void removeSelected();
+
+    
+
+private:
+    std::vector<Node *> selectedNodes;
+
+    std::vector<Node *> nodes;
+    std::vector<Link *> links;
+
+    // look and feel
+    std::shared_ptr<NodeStyle> nodeStyle;
+
+    // Layout building
+    void doNodeLayout(Node* node);
+    vec2 getConnectorSize(Node* node, bool output);
+    void doConnectorLayout(Node* node, bool output);
+
+    // shaders
+    Shader nodeShader;
+    Shader nodeShadowShader;
+    Shader nodeConnectorShader;
+    Shader linkShader;
+    Shader basicShader;
+    Shader boxSelectShader;
+    // culling
+    std::vector<Node *> visibleNodes;
+    std::vector<Link *> visibleLinks;
+    void cullNodes(const vec2 &camstart, const vec2 &camend);
+    void cullLinks(const vec2 &camstart, const vec2 &camend);
+    // batch rendering
+    void renderShadows(const mat4 &pmat, const mat4 &view);
+    void renderNodes(const mat4 &pmat, const mat4 &view);
+    void renderText(const mat4 &pmat, const mat4 &view);
+    void renderConnectors(const mat4 &pmat, const mat4 &view);
+    void renderLinks(const mat4 &pmat, const mat4 &view);
 };

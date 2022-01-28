@@ -1,6 +1,10 @@
 #pragma once
-
 #include "node_system.hpp"
+#include "render/backend.hpp"
+#include "render/text.hpp"
+#include <cmath>
+#include <optional>
+
 
 // Connector
 Connector::Connector(string name, Node *parent, bool isInput) : name(name), parent(parent), isInput(isInput) {}
@@ -27,19 +31,13 @@ void Link::propagate()
     output->state = nextState;
     state = nextState; // current state
 }
-
-// NodeStyle
-NodeStyle::NodeStyle(Font &font) : font(font) {}
-NodeStyle::NodeStyle() : font(Font::getDefault()) {}
-NodeStyle &NodeStyle::getDefault()
-{
-    static NodeStyle defaultstyle;
-    return defaultstyle;
+void Link::reset(){
+    state = false;
+    fetchNextState();
 }
 
 // Node
-Node::Node(string name, vec2 pos, NodeStyle &style) : name(name), pos(pos), style(style) {}
-Node::Node(string name, vec2 pos) : name(name), pos(pos), style(NodeStyle::getDefault()) {}
+Node::Node(string name, vec2 pos) : name(name), pos(pos) {}
 Node::~Node()
 {
     for (Connector *c : inputs)
@@ -55,7 +53,6 @@ bool Node::addOutput(string name)
     if (i == outputs.end())
     {
         outputs.push_back(new Connector(name, this, false));
-        doLayout();
         return true;
     }
     return false;
@@ -67,7 +64,6 @@ bool Node::addInput(string name)
     if (i == inputs.end())
     {
         inputs.push_back(new Connector(name, this, true));
-        doLayout();
         return true;
     }
     return false;
@@ -89,74 +85,6 @@ Connector *Node::getOutput(string name)
         return outputs[std::distance(outputs.begin(), i)];
     return nullptr;
 }
-vec2 Node::getTextPos() const
-{
-    return pos + textPos;
-}
-
-void Node::doLayout()
-{
-    const float headerHeight = style.font.getHeight(name, style.headerTextSize) + style.nodeRadius;
-    const float headerWidth = style.font.getWidth(name, style.headerTextSize) + 2 * style.nodeRadius;
-    textPos = vec2(style.nodeRadius, style.nodeRadius);
-    vec2 inputsSize = getConnectorSize(false);
-    vec2 outputsSize = getConnectorSize(true);
-    size = vec2(std::max(headerWidth, inputsSize.x + style.inOutDist + outputsSize.x), headerHeight + std::max(inputsSize.y, outputsSize.y));
-
-    headerSize = vec2(size.x, headerHeight);
-    doConnectorLayout(false);
-    doConnectorLayout(true);
-}
-vec2 Node::getConnectorSize(bool output)
-{
-    vec2 connectorSize = vec2(0);
-    std::vector<Connector *> &connectors = output ? outputs : inputs;
-    for (Connector *c : connectors)
-    {
-        connectorSize.y += style.connectorMargin.y * 2 + std::max(style.connectorRadius * 2, style.font.getHeight(c->name, style.connectorTextSize));
-        connectorSize.x = std::max(connectorSize.x, style.connectorMargin.x + style.connectorRadius * 2 + style.font.getWidth(c->name, style.connectorTextSize) + style.textOutletMargin);
-    }
-    return connectorSize;
-}
-void Node::doConnectorLayout(bool output)
-{
-    float inOffsetY = headerSize.y;
-    std::vector<Connector *> &connectors = output ? outputs : inputs;
-    for (Connector *c : connectors)
-    {
-        inOffsetY += style.connectorMargin.y;
-        vec2 outletPos;
-        vec2 connectorTextPos;
-        if (output)
-        {
-            float textWidth = style.font.getWidth(c->name, style.connectorTextSize);
-            outletPos.x = size.x - style.connectorMargin.x - style.connectorRadius;
-            connectorTextPos.x = size.x - style.connectorMargin.x - 2 * style.connectorRadius - textWidth - style.textOutletMargin;
-        }
-        else
-        {
-            outletPos.x = style.connectorMargin.x + style.connectorRadius;
-            connectorTextPos.x = style.connectorMargin.x + 2 * style.connectorRadius + style.textOutletMargin;
-        }
-        float textHeight = style.font.getHeight(c->name, style.connectorTextSize);
-        float totalHeight = textHeight;
-        if (style.connectorRadius * 2 <= textHeight)
-        {
-            connectorTextPos.y = inOffsetY;
-            outletPos.y = inOffsetY + textHeight / 2.0f;
-        }
-        else
-        {
-            outletPos.y = inOffsetY + style.connectorRadius;
-            connectorTextPos.y = inOffsetY + style.connectorRadius - textHeight / 2.0f;
-            totalHeight = style.connectorRadius * 2;
-        }
-        // update connector pos
-        c->pos = outletPos;
-        c->textPos = connectorTextPos;
-        inOffsetY += totalHeight;
-    }
-}
 
 // Node manager
 
@@ -165,8 +93,9 @@ NodeManager::NodeManager() : nodeShader("node"),
                              nodeConnectorShader("node_connector"),
                              linkShader("link"),
                              basicShader("basic"),
-                             nodeStyle(NodeStyle::getDefault())
+                             boxSelectShader("box_select")
 {
+    setLookAndFeel(std::make_shared<NodeStyle>());
 }
 
 NodeManager::~NodeManager()
@@ -178,9 +107,17 @@ NodeManager::~NodeManager()
         delete node;
 }
 
+void  NodeManager::reset(){
+    for(Node* node : nodes)
+        node->reset();
+    for(Link* link : links)
+        link->reset();
+}
+
 void NodeManager::addNode(Node *node)
 {
     nodes.push_back(node);
+    doNodeLayout(node);
 }
 
 void NodeManager::addLink(Link *link)
@@ -200,9 +137,9 @@ void NodeManager::render(const mat4 &pmat, const mat4 &view, const vec2 &camstar
     renderText(pmat, view);
 
     // TODO : remove this
-    nodeStyle.font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(1));
-    nodeStyle.font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(1));
-    nodeStyle.font.render(pmat);
+    nodeStyle->font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(1));
+    nodeStyle->font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(1));
+    nodeStyle->font.render(pmat);
 
     visibleNodes.clear();
     visibleLinks.clear();
@@ -257,11 +194,18 @@ void NodeManager::setProgress(float t)
 #endif
 }
 
+void NodeManager::removeSelected(){
+    for(Node* node : selectedNodes){
+        removeNode(node);
+    }
+    selectedNodes.clear();
+}
+
 std::optional<Node *> NodeManager::getNodeAt(vec2 mouse)
 {
     for (Node *node : nodes)
     {
-        vec2 size = node->headerSize;
+        vec2 size = node->size;
         vec2 pos = node->pos;
         if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y)
             return node;
@@ -281,7 +225,7 @@ std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse)
             for (Connector *c : node->inputs)
             {
                 vec2 cpos = node->pos + c->pos;
-                float r = nodeStyle.connectorRadius;
+                float r = nodeStyle->connectorRadius;
                 if (distanceSq(mouse, cpos) <= r * r)
                     return c;
             }
@@ -290,7 +234,7 @@ std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse)
             for (Connector *c : node->outputs)
             {
                 vec2 cpos = node->pos + c->pos;
-                float r = nodeStyle.connectorRadius;
+                float r = nodeStyle->connectorRadius;
                 if (distanceSq(mouse, cpos) <= r * r)
                     return c;
             }
@@ -298,6 +242,48 @@ std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse)
     }
     return {};
 }
+
+void NodeManager::moveSelectedNodes(vec2 offset){
+    for(Node* node : selectedNodes){
+        node->pos = node->pos + offset;
+    }
+}
+
+void NodeManager::selectNode(Node* node){
+    node->selected = true;
+    if(std::find(selectedNodes.begin(), selectedNodes.end(), node) == selectedNodes.end())
+        selectedNodes.push_back(node);
+}
+
+void NodeManager::boxSelect(vec2 start, vec2 end){
+    vec2 boxStart = vec2(std::min(start.x, end.x), std::min(start.y, end.y));
+    vec2 boxEnd =vec2(std::max(start.x, end.x), std::max(start.y, end.y));
+
+    for(Node* node : nodes){
+        vec2 pos = node->pos;
+        vec2 size = node->size;
+        if (pos.x + size.x >= boxStart.x && pos.x <= boxEnd.x && pos.y + size.y >= boxStart.y && pos.y <= boxEnd.y)
+            selectNode(node);
+    }
+}
+
+void NodeManager::deselectAll(){
+    for(Node* node : nodes){
+        node->selected = false;
+    }
+    selectedNodes.clear();
+}
+
+void NodeManager::deselectNode(Node* node){
+    node->selected = false;
+    selectedNodes.erase(std::remove(selectedNodes.begin(), selectedNodes.end(), node), selectedNodes.end());
+}
+
+bool NodeManager::nodeIsSelected(Node* node){
+    return node->selected;
+}
+
+
 
 void NodeManager::drawTempLink(Connector *c, vec2 mouse, const mat4 &pmat, const mat4 &view)
 {
@@ -326,10 +312,27 @@ void NodeManager::drawTempLink(Connector *c, vec2 mouse, const mat4 &pmat, const
     linkShader.use();
     linkShader.setMat4("projection", pmat);
     linkShader.setMat4("view", view);
-    linkShader.setFloat("width", nodeStyle.connectorRadius / 2.0f);
-    linkShader.setVec3("falseColor", nodeStyle.falseColor);
-    linkShader.setVec3("trueColor", nodeStyle.trueColor);
+    linkShader.setFloat("width", nodeStyle->connectorRadius / 2.0f);
+    linkShader.setVec3("falseColor", nodeStyle->falseColor);
+    linkShader.setVec3("trueColor", nodeStyle->trueColor);
     glDrawArrays(GL_LINES, 0, 2);
+}
+
+void NodeManager::drawBoxSelection(vec2 start, vec2 end, const mat4 &pmat, const mat4 &view){
+    vec2 boxStart = vec2(std::min(start.x, end.x), std::min(start.y, end.y));
+    vec2 boxEnd =vec2(std::max(start.x, end.x), std::max(start.y, end.y));
+
+    float sv[] = {boxStart.x, boxStart.y, boxEnd.x-boxStart.x, boxEnd.y-boxStart.y};
+    VertexArray vao;
+    VertexBuffer vbo(sv, sizeof(sv));
+    VertexBufferLayout layout;
+    layout.push<float>(4); // rect
+    vao.addBuffer(vbo, layout);
+    boxSelectShader.use();
+    boxSelectShader.setMat4("projection", pmat);
+    boxSelectShader.setMat4("view", view);
+    boxSelectShader.setVec3("selectedColor", nodeStyle->nodeSelectedColor);
+    glDrawArrays(GL_POINTS, 0, 1);
 }
 
 bool NodeManager::connect(Connector *c1, Connector *c2)
@@ -386,8 +389,8 @@ void NodeManager::cullNodes(const vec2 &camstart, const vec2 &camend)
 {
     for (Node *node : nodes)
     {
-        vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
-        vec2 size = node->size + vec2(2 * nodeStyle.shadowSize);
+        vec2 pos = node->pos - vec2(nodeStyle->shadowSize);
+        vec2 size = node->size + vec2(2 * nodeStyle->shadowSize);
         if (pos.x + size.x >= camstart.x && pos.x <= camend.x && pos.y + size.y >= camstart.y && pos.y <= camend.y)
             visibleNodes.push_back(node);
     }
@@ -412,23 +415,25 @@ void NodeManager::renderShadows(const mat4 &pmat, const mat4 &view)
     if (visibleNodes.empty())
         return;
     std::vector<float> vertices;
-    vertices.reserve(visibleNodes.size());
+    vertices.reserve(visibleNodes.size()*5);
     for (const Node *node : visibleNodes)
     {
-        vec2 pos = node->pos - vec2(nodeStyle.shadowSize);
-        vec2 size = node->size + vec2(nodeStyle.shadowSize * 2);
-        vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y});
+        vec2 pos = node->pos - vec2(nodeStyle->shadowSize);
+        vec2 size = node->size + vec2(nodeStyle->shadowSize * 2);
+        vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, node->selected ? 1.0f : 0.0f});
     }
     VertexArray vao;
     VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
     VertexBufferLayout layout;
     layout.push<float>(4); // rect
+    layout.push<float>(1); // selected
     vao.addBuffer(vbo, layout);
     nodeShadowShader.use();
     nodeShadowShader.setMat4("projection", pmat);
     nodeShadowShader.setMat4("view", view);
-    nodeShadowShader.setFloat("smoothing", nodeStyle.shadowSize);
-    nodeShadowShader.setFloat("radius", nodeStyle.nodeRadius);
+    nodeShadowShader.setFloat("smoothing", nodeStyle->shadowSize);
+    nodeShadowShader.setFloat("radius", nodeStyle->nodeRadius);
+    nodeShadowShader.setVec3("selectedColor", nodeStyle->nodeSelectedColor);
     glDrawArrays(GL_POINTS, 0, visibleNodes.size());
 }
 
@@ -438,27 +443,29 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view)
         return;
 
     std::vector<float> vertices;
-    vertices.reserve(visibleNodes.size());
+    vertices.reserve(visibleNodes.size()*6);
 
     for (const Node *node : visibleNodes)
     {
         vec2 pos = node->pos;
         vec2 size = node->size;
         float headerHeight = node->headerSize.y;
-        vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, headerHeight});
+        vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, headerHeight, node->selected ? 1.0f : 0.0f});
     }
     VertexArray vao;
     VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
     VertexBufferLayout layout;
     layout.push<float>(4); // rect
     layout.push<float>(1); // headerHeight
+    layout.push<float>(1); // selected
     vao.addBuffer(vbo, layout);
     nodeShader.use();
     nodeShader.setMat4("projection", pmat);
     nodeShader.setMat4("view", view);
-    nodeShader.setFloat("radius", nodeStyle.nodeRadius);
-    nodeShader.setVec3("headerColor", nodeStyle.headerColor);
-    nodeShader.setVec3("bodyColor", nodeStyle.bodyColor);
+    nodeShader.setFloat("radius", nodeStyle->nodeRadius);
+    nodeShader.setVec3("headerColor", nodeStyle->headerColor);
+    nodeShader.setVec3("bodyColor", nodeStyle->bodyColor);
+    nodeShader.setVec3("selectedColor", nodeStyle->nodeSelectedColor);
     glDrawArrays(GL_POINTS, 0, visibleNodes.size());
 }
 
@@ -468,17 +475,17 @@ void NodeManager::renderText(const mat4 &pmat, const mat4 &view)
         return;
     for (const Node *node : visibleNodes)
     {
-        nodeStyle.font.text(node->name, node->getTextPos(), nodeStyle.headerTextSize, nodeStyle.headerTextColor);
+        nodeStyle->font.text(node->name, node->pos+node->textPos, nodeStyle->headerTextSize, nodeStyle->headerTextColor);
         for (const Connector *c : node->inputs)
         {
-            nodeStyle.font.text(c->name, c->parent->pos + c->textPos, nodeStyle.connectorTextSize, nodeStyle.connectorTextColor);
+            nodeStyle->font.text(c->name, c->parent->pos + c->textPos, nodeStyle->connectorTextSize, nodeStyle->connectorTextColor);
         }
         for (const Connector *c : node->outputs)
         {
-            nodeStyle.font.text(c->name, c->parent->pos + c->textPos, nodeStyle.connectorTextSize, nodeStyle.connectorTextColor);
+            nodeStyle->font.text(c->name, c->parent->pos + c->textPos, nodeStyle->connectorTextSize, nodeStyle->connectorTextColor);
         }
     }
-    nodeStyle.font.render(pmat, view);
+    nodeStyle->font.render(pmat, view);
 }
 
 void NodeManager::renderConnectors(const mat4 &pmat, const mat4 &view)
@@ -495,14 +502,14 @@ void NodeManager::renderConnectors(const mat4 &pmat, const mat4 &view)
         {
             vec2 pos = c->parent->pos + c->pos;
             float state = c->state ? 1.0f : 0.0f;
-            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle.connectorRadius, state});
+            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state});
             i++;
         }
         for (const Connector *c : node->outputs)
         {
             vec2 pos = c->parent->pos + c->pos;
             float state = c->state ? 1.0f : 0.0f;
-            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle.connectorRadius, state});
+            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state});
             i++;
         }
     }
@@ -514,8 +521,8 @@ void NodeManager::renderConnectors(const mat4 &pmat, const mat4 &view)
     nodeConnectorShader.use();
     nodeConnectorShader.setMat4("projection", pmat);
     nodeConnectorShader.setMat4("view", view);
-    nodeConnectorShader.setVec3("falseColor", nodeStyle.falseColor);
-    nodeConnectorShader.setVec3("trueColor", nodeStyle.trueColor);
+    nodeConnectorShader.setVec3("falseColor", nodeStyle->falseColor);
+    nodeConnectorShader.setVec3("trueColor", nodeStyle->trueColor);
     glDrawArrays(GL_POINTS, 0, i);
 }
 
@@ -548,8 +555,76 @@ void NodeManager::renderLinks(const mat4 &pmat, const mat4 &view)
     linkShader.use();
     linkShader.setMat4("projection", pmat);
     linkShader.setMat4("view", view);
-    linkShader.setFloat("width", nodeStyle.connectorRadius / 2.0f);
-    linkShader.setVec3("falseColor", nodeStyle.falseColor);
-    linkShader.setVec3("trueColor", nodeStyle.trueColor);
+    linkShader.setFloat("width", nodeStyle->connectorRadius / 2.0f);
+    linkShader.setVec3("falseColor", nodeStyle->falseColor);
+    linkShader.setVec3("trueColor", nodeStyle->trueColor);
     glDrawArrays(GL_LINES, 0, 2 * visibleLinks.size());
+}
+
+void NodeManager::doNodeLayout(Node *node){
+    const float headerHeight = nodeStyle->font.getHeight(node->name, nodeStyle->headerTextSize) + nodeStyle->nodeRadius;
+    const float headerWidth = nodeStyle->font.getWidth(node->name, nodeStyle->headerTextSize) + 2 * nodeStyle->nodeRadius;
+    node->textPos = vec2(nodeStyle->nodeRadius, nodeStyle->nodeRadius);
+    vec2 inputsSize = getConnectorSize(node, false);
+    vec2 outputsSize = getConnectorSize(node, true);
+    node->size = vec2(std::max(headerWidth, inputsSize.x + nodeStyle->inOutDist + outputsSize.x), headerHeight + std::max(inputsSize.y, outputsSize.y));
+
+    node->headerSize = vec2(node->size.x, headerHeight);
+    doConnectorLayout(node, false);
+    doConnectorLayout(node, true);
+}
+vec2 NodeManager::getConnectorSize(Node *node, bool output){
+    vec2 connectorSize = vec2(0);
+    std::vector<Connector *> &connectors = output ? node->outputs : node->inputs;
+    for (Connector *c : connectors)
+    {
+        connectorSize.y += nodeStyle->connectorMargin.y * 2 + std::max(nodeStyle->connectorRadius * 2, nodeStyle->font.getHeight(c->name, nodeStyle->connectorTextSize));
+        connectorSize.x = std::max(connectorSize.x, nodeStyle->connectorMargin.x + nodeStyle->connectorRadius * 2 + nodeStyle->font.getWidth(c->name, nodeStyle->connectorTextSize) + nodeStyle->textOutletMargin);
+    }
+    return connectorSize;
+}
+void NodeManager::doConnectorLayout(Node *node, bool output)
+{
+    float inOffsetY = node->headerSize.y;
+    std::vector<Connector *> &connectors = output ? node->outputs : node->inputs;
+    for (Connector *c : connectors)
+    {
+        inOffsetY += nodeStyle->connectorMargin.y;
+        vec2 outletPos;
+        vec2 connectorTextPos;
+        if (output)
+        {
+            float textWidth = nodeStyle->font.getWidth(c->name, nodeStyle->connectorTextSize);
+            outletPos.x = node->size.x - nodeStyle->connectorMargin.x - nodeStyle->connectorRadius;
+            connectorTextPos.x = node->size.x - nodeStyle->connectorMargin.x - 2 * nodeStyle->connectorRadius - textWidth - nodeStyle->textOutletMargin;
+        }
+        else
+        {
+            outletPos.x = nodeStyle->connectorMargin.x + nodeStyle->connectorRadius;
+            connectorTextPos.x = nodeStyle->connectorMargin.x + 2 * nodeStyle->connectorRadius + nodeStyle->textOutletMargin;
+        }
+        float textHeight = nodeStyle->font.getHeight(c->name, nodeStyle->connectorTextSize);
+        float totalHeight = textHeight;
+        if (nodeStyle->connectorRadius * 2 <= textHeight)
+        {
+            connectorTextPos.y = inOffsetY;
+            outletPos.y = inOffsetY + textHeight / 2.0f;
+        }
+        else
+        {
+            outletPos.y = inOffsetY + nodeStyle->connectorRadius;
+            connectorTextPos.y = inOffsetY + nodeStyle->connectorRadius - textHeight / 2.0f;
+            totalHeight = nodeStyle->connectorRadius * 2;
+        }
+        // update connector pos
+        c->pos = outletPos;
+        c->textPos = connectorTextPos;
+        inOffsetY += totalHeight;
+    }
+}
+
+void NodeManager::setLookAndFeel(std::shared_ptr<NodeStyle> style){
+    nodeStyle = style;
+    for(Node* node : nodes)
+        doNodeLayout(node);
 }
