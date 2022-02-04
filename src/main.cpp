@@ -21,23 +21,21 @@ vec2 oldMouse = vec2(0);
 vec2 mouse = vec2(0);
 bool viewPanning = false;
 
-mat4 getViewMatrix()
-{
+mat4 getViewMatrix() {
     mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
     vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
     view = translate(view, viewTranslate);
     return view;
 }
-mat4 getInvViewMatrix()
-{
+
+mat4 getInvViewMatrix() {
     mat4 invView = scale(identity<4>(), vec3(1.0f / zoom, 1.0f / zoom, 0));
     vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
     invView = translate(invView, -viewTranslate / zoom);
     return invView;
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]) {
     // Math vector & matrix packing check
     static_assert(sizeof(vec2) == sizeof(GLfloat) * 2, "Can't pack vec2.");
     static_assert(sizeof(vec3) == sizeof(GLfloat) * 3, "Can't pack vec3.");
@@ -76,7 +74,7 @@ int main(int argc, char const *argv[])
 
     bool unlimitedTickTime = false;
 
-    vec2 orpos = vec2(platform.getWidth() / 2.0f, platform.getHeight() / 2.0f);
+    vec2 orpos = vec2((float) platform.getWidth() / 2.0f, (float) platform.getHeight() / 2.0f);
 
     Node *true1 = new TrueNode(orpos + vec2(-350, -100));
     Node *not1 = new NotNode(orpos + vec2(-200, -100));
@@ -109,17 +107,16 @@ int main(int argc, char const *argv[])
         NodeManager.addLink(n1n3);
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
-    }*/
+    }
+    */
 
     // projection size
     double avgFps = 0;
     unsigned long long frame = 0;
     std::optional<Node *> grabNode = {};
-    vec2 grabOffset = vec2(0);
     std::optional<Connector *> startConnector = {};
 
-    while (platform.processEvents())
-    {
+    while (platform.processEvents()) {
         auto startTime = std::chrono::high_resolution_clock::now();
         int width = platform.getWidth();
         int height = platform.getHeight();
@@ -127,18 +124,16 @@ int main(int argc, char const *argv[])
         oldMouse = mouse;
         vec2 oldWorldMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
 
-        mouse = vec2(platform.getMouseX(), platform.getMouseY());
+        mouse = vec2((float) platform.getMouseX(), (float) platform.getMouseY());
         // move view
-        if (viewPanning)
-        {
+        if (viewPanning) {
             viewOffset = viewOffset + mouse - oldMouse;
         }
         int delta = platform.getMouseWheel();
         // update zoom
-        if (delta != 0)
-        {
+        if (delta != 0) {
             vec2 tempMouse = (getInvViewMatrix() * vec4(mouse, 0, 1)).xy;
-            zoom += zoom * 0.05f * delta;
+            zoom += zoom * 0.05f * ((float) delta);
             if (zoom < 0.1f)
                 zoom = 0.1f;
             else if (zoom >= 10)
@@ -152,85 +147,67 @@ int main(int argc, char const *argv[])
         vec2 worldMouse = (invView * vec4(mouse, 0, 1)).xy;
 
         // Projection matrix
-        mat4 pmat(vec4(2.0f / (float)width, 0, 0, 0), vec4(0, -2.0f / (float)height, 0, 0), vec4(0, 0, 1, 0), vec4(-1, 1, 0, 1));
+        mat4 pmat(vec4(2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float) height, 0, 0), vec4(0, 0, 1, 0),
+                  vec4(-1, 1, 0, 1));
 
-        if (platform.isMousePressed(MouseButton::LEFT))
-        {
+        if (platform.isMousePressed(MouseButton::LEFT)) {
             startConnector = NodeManager.getConnectorAt(worldMouse);
 
-            if (!startConnector)
-            {
+            if (!startConnector) {
                 grabNode = NodeManager.getNodeAt(worldMouse);
-                if (grabNode)
-                {
-                    grabOffset = grabNode.value()->pos - worldMouse;
-                    if (!NodeManager.nodeIsSelected(grabNode.value()))
-                    {
+                if (grabNode) {
+                    if (!NodeManager.nodeIsSelected(grabNode.value())) {
                         NodeManager.deselectAll();
                     }
                     NodeManager.selectNode(grabNode.value());
-                }
-                else
-                {
+                } else {
                     NodeManager.deselectAll();
                     boxSelection = true;
                     boxSelectionStart = worldMouse;
                 }
             }
-        }
-        else if (platform.isMouseReleased(MouseButton::LEFT))
-        {
+        } else if (platform.isMouseReleased(MouseButton::LEFT)) {
             grabNode = {};
-            if (startConnector)
-            {
+            if (startConnector) {
                 auto endConnector = NodeManager.getConnectorAt(worldMouse);
                 if (endConnector)
                     NodeManager.connect(startConnector.value(), endConnector.value());
                 startConnector = {};
             }
-            if (boxSelection)
-            {
+            if (boxSelection) {
                 boxSelection = false;
                 vec2 boxSelectionEnd = worldMouse;
-                vec2 boxStart = vec2(std::min(boxSelectionStart.x, boxSelectionEnd.x), std::min(boxSelectionStart.y, boxSelectionEnd.y));
-                vec2 boxEnd = vec2(std::max(boxSelectionStart.x, boxSelectionEnd.x), std::max(boxSelectionStart.y, boxSelectionEnd.y));
+                vec2 boxStart = vec2(std::min(boxSelectionStart.x, boxSelectionEnd.x),
+                                     std::min(boxSelectionStart.y, boxSelectionEnd.y));
+                vec2 boxEnd = vec2(std::max(boxSelectionStart.x, boxSelectionEnd.x),
+                                   std::max(boxSelectionStart.y, boxSelectionEnd.y));
                 NodeManager.boxSelect(boxStart, boxEnd);
             }
         }
 
-        if (platform.isMousePressed(MouseButton::RIGHT))
-        {
+        if (platform.isMousePressed(MouseButton::RIGHT)) {
             auto c = NodeManager.getConnectorAt(worldMouse);
-            if (c)
-            {
+            if (c) {
                 NodeManager.disconnectAll(c.value());
-            }
-            else
-            {
+            } else {
                 auto node = NodeManager.getNodeAt(worldMouse);
-                if (node)
-                {
+                if (node) {
                     NodeManager.selectNode(node.value());
                     NodeManager.removeSelected();
                 }
 
 
-
-
             }
         }
 
-        if (platform.isMousePressed(MouseButton::MIDDLE))
-        {
+        if (platform.isMousePressed(MouseButton::MIDDLE)) {
             viewPanning = true;
         }
-        if (platform.isMouseReleased(MouseButton::MIDDLE))
-        {
+        if (platform.isMouseReleased(MouseButton::MIDDLE)) {
             viewPanning = false;
         }
 
-        if (grabNode)
-        {
+        if (grabNode) {
             //grabNode.value()->pos = worldMouse + grabOffset;
             NodeManager.moveSelectedNodes(worldMouse - oldWorldMouse);
         }
@@ -251,15 +228,13 @@ int main(int argc, char const *argv[])
         int ny = height / 16;
         std::vector<vec2> data;
         data.reserve(nx + ny);
-        for (int i = 0; i <= nx; ++i)
-        {
-            data.push_back(vec2(16.0f * i, 0));
-            data.push_back(vec2(16.0f * i, height));
+        for (int i = 0; i <= nx; ++i) {
+            data.emplace_back(vec2(16.0f * ((float) i), 0));
+            data.emplace_back(vec2(16.0f * ((float) i), (float) height));
         }
-        for (int i = 0; i <= ny; ++i)
-        {
-            data.push_back(vec2(0, 16.0f * i));
-            data.push_back(vec2(width, 16.0f * i));
+        for (int i = 0; i <= ny; ++i) {
+            data.emplace_back(vec2(0, 16.0f * ((float) i)));
+            data.emplace_back(vec2((float) width, 16.0f * ((float) i)));
         }
         VertexArray vao;
         VertexBuffer vbo(&data[0], 4 * (nx + ny + 2) * sizeof(float));
@@ -275,47 +250,41 @@ int main(int argc, char const *argv[])
         vao.bind();
         glDrawArrays(GL_LINES, 0, 2 * (nx + ny + 2));
 
-        if (startConnector)
-        {
+        if (startConnector) {
             NodeManager.drawTempLink(startConnector.value(), worldMouse, pmat, view);
         }
 
         // ---- simulation ----
 
         // start cycle
-        if (!unlimitedTickTime)
-        {
-            if (!beginUpdateDone)
-            {
+        if (!unlimitedTickTime) {
+            if (!beginUpdateDone) {
                 NodeManager.beginUpdate();
                 beginUpdateDone = true;
                 simStartTime = std::chrono::system_clock::now();
             }
             auto time = std::chrono::system_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time - simStartTime);
-            float t = (float)((double)duration.count() / (double)tickTime.count());
+            auto t = (float) ((double) duration.count() / (double) tickTime.count());
             if (t > 1)
                 t = 1;
             // update animation
             NodeManager.setProgress(t);
             // end cycle
-            if (duration >= tickTime)
-            {
+            if (duration >= tickTime) {
                 NodeManager.endUpdate();
                 beginUpdateDone = false;
             }
-        }
-        else
-        {
+        } else {
             NodeManager.beginUpdate();
             NodeManager.setProgress(1);
             NodeManager.endUpdate();
         }
 
-        NodeManager.render(pmat, view, (invView * vec4(0, 0, 0, 1)).xy, (invView * vec4(width, height, 0, 1)).xy);
+        NodeManager.render(pmat, view, (invView * vec4(0, 0, 0, 1)).xy,
+                           (invView * vec4((float) width, (float) height, 0, 1)).xy);
 
-        if (boxSelection)
-        {
+        if (boxSelection) {
             NodeManager.drawBoxSelection(boxSelectionStart, worldMouse, pmat, view);
         }
 
@@ -330,23 +299,21 @@ int main(int argc, char const *argv[])
         }
         */
         auto finalTime = std::chrono::high_resolution_clock::now();
-        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(finalTime - startTime).count();
-        int fps = (int)(1000000.0 / finalElapsedTime);
+        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                finalTime - startTime).count();
+        int fps = (int) (1000000.0 / (double) finalElapsedTime);
         string text = std::to_string(fps);
         font.text("fps : " + text, vec2(0), 20, vec3(1));
 
-        double currentFps = (1000000.0 / finalElapsedTime);
-        if (frame > 1)
-        {
-            avgFps = avgFps + (long double)(currentFps - avgFps) / (long double)frame;
-        }
-        else
-        {
+        double currentFps = (1000000.0 / (double) finalElapsedTime);
+        if (frame > 1) {
+            avgFps = avgFps + (currentFps - avgFps) / (double) frame;
+        } else {
             avgFps = currentFps;
         }
         frame++;
 
-        text = std::to_string((int)avgFps);
+        text = std::to_string((int) avgFps);
         font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
 
         font.render(pmat);

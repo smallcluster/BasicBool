@@ -1,11 +1,13 @@
 #pragma once
+
 #include "backend.hpp"
 
-class Shapes
-{
+class Shapes {
 protected:
     Shapes(Shapes &other);
+
     void operator=(const Shapes &);
+
     Shapes();
 
 private:
@@ -20,5 +22,6 @@ private:
 
 public:
     static Shapes &getInstance();
+
     void drawQuad();
 };

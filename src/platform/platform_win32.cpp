@@ -17,11 +17,12 @@
 #define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
 #define WGL_CONTEXT_FLAGS_ARB 0x2094
 #define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x0002
+
 typedef HGLRC(WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC hDC, HGLRC hShareContext, const int *attribList);
+
 typedef BOOL(WINAPI *PFNWGLSWAPINTERVALEXTPROC)(int interval);
 
-struct Win32State
-{
+struct Win32State {
     HINSTANCE hInstance = nullptr;
     HWND handle = nullptr;
     HDC hDC = nullptr;    // Device context
@@ -42,106 +43,96 @@ struct Win32State
 
 static Win32State win32State;
 
-int Platform::getWidth()
-{
+int Platform::getWidth() {
     return win32State.width;
 }
-int Platform::getHeight()
-{
+
+int Platform::getHeight() {
     return win32State.height;
 }
 
-LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (umsg)
-    {
-    case WM_ERASEBKGND:
-        // Ereasing will by handled by the application to prevent flicker.
-        return 1;
-    case WM_CLOSE:
-        win32State.shouldClose = true;
-        return 0;
-    case WM_DESTROY:
-        win32State.shouldClose = true;
-        PostQuitMessage(0);
-        return 0;
+LRESULT CALLBACK win32ProcessMessages(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam) {
+    switch (umsg) {
+        case WM_ERASEBKGND:
+            // Ereasing will by handled by the application to prevent flicker.
+            return 1;
+        case WM_CLOSE:
+            win32State.shouldClose = true;
+            return 0;
+        case WM_DESTROY:
+            win32State.shouldClose = true;
+            PostQuitMessage(0);
+            return 0;
 
-    case WM_SIZE:
-    {
-        RECT newRect;
-        GetClientRect(hwnd, &newRect);
-        win32State.width = newRect.right - newRect.left;
-        win32State.height = newRect.bottom - newRect.top;
-    }
-    break;
+        case WM_SIZE: {
+            RECT newRect;
+            GetClientRect(hwnd, &newRect);
+            win32State.width = newRect.right - newRect.left;
+            win32State.height = newRect.bottom - newRect.top;
+        }
+            break;
 
-    case WM_SIZING:
-    {
-        RECT newRect;
-        GetClientRect(hwnd, &newRect);
-        win32State.width = newRect.right - newRect.left;
-        win32State.height = newRect.bottom - newRect.top;
-    }
-    break;
+        case WM_SIZING: {
+            RECT newRect;
+            GetClientRect(hwnd, &newRect);
+            win32State.width = newRect.right - newRect.left;
+            win32State.height = newRect.bottom - newRect.top;
+        }
+            break;
 
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-    {
-        bool pressed = umsg == WM_KEYDOWN || umsg == WM_SYSKEYDOWN;
-        // TODO : handle keyboard input
-    }
-    break;
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP: {
+            bool pressed = umsg == WM_KEYDOWN || umsg == WM_SYSKEYDOWN;
+            // TODO : handle keyboard input
+        }
+            break;
 
-    case WM_MOUSEMOVE:
-    {
-        win32State.mouseX = GET_X_LPARAM(lParam);
-        win32State.mouseY = GET_Y_LPARAM(lParam);
-    }
-    break;
+        case WM_MOUSEMOVE: {
+            win32State.mouseX = GET_X_LPARAM(lParam);
+            win32State.mouseY = GET_Y_LPARAM(lParam);
+        }
+            break;
 
-    case WM_MOUSEWHEEL:
-    {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-        if (delta != 0)
-            delta = delta < 0 ? -1 : 1; // Normalize input for OS-independent use
-        win32State.mouseWheel = delta;
-    }
-    break;
+        case WM_MOUSEWHEEL: {
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (delta != 0)
+                delta = delta < 0 ? -1 : 1; // Normalize input for OS-independent use
+            win32State.mouseWheel = delta;
+        }
+            break;
 
-    case WM_LBUTTONDOWN:
-        win32State.mouseLeftDown = true;
-        break;
-    case WM_MBUTTONDOWN:
-        win32State.mouseMiddleDown = true;
-        break;
-    case WM_RBUTTONDOWN:
-        win32State.mouseRightDown = true;
-        break;
-    case WM_LBUTTONUP:
-        win32State.mouseLeftDown = false;
-        break;
-    case WM_RBUTTONUP:
-        win32State.mouseRightDown = false;
-        break;
-    case WM_MBUTTONUP:
-        win32State.mouseMiddleDown = false;
-        break;
+        case WM_LBUTTONDOWN:
+            win32State.mouseLeftDown = true;
+            break;
+        case WM_MBUTTONDOWN:
+            win32State.mouseMiddleDown = true;
+            break;
+        case WM_RBUTTONDOWN:
+            win32State.mouseRightDown = true;
+            break;
+        case WM_LBUTTONUP:
+            win32State.mouseLeftDown = false;
+            break;
+        case WM_RBUTTONUP:
+            win32State.mouseRightDown = false;
+            break;
+        case WM_MBUTTONUP:
+            win32State.mouseMiddleDown = false;
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 
     return DefWindowProcA(hwnd, umsg, wParam, lParam);
 }
 
-Platform::Platform(const string &name, int width, int height)
-{
+Platform::Platform(const string &name, int width, int height) {
     LOGDEBUG("Initializing platform...");
     // Can't initialize the system twice !
-    if (win32State.handle != nullptr || win32State.hInstance != nullptr)
-    {
+    if (win32State.handle != nullptr || win32State.hInstance != nullptr) {
         LOGWARN("Platform already initialized. Skipping initialization.");
         return;
     }
@@ -165,8 +156,7 @@ Platform::Platform(const string &name, int width, int height)
     wc.hbrBackground = NULL; // transparent
 
     // Register window
-    if (!RegisterClassA(&wc))
-    {
+    if (!RegisterClassA(&wc)) {
         MessageBoxA(0, "Window registration failed !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Window registration failed !");
         return;
@@ -190,11 +180,10 @@ Platform::Platform(const string &name, int width, int height)
     int windowHeight = height + (borderRect.bottom - borderRect.top);
 
     win32State.handle = CreateWindowExA(
-        windowExStyle, "BasicBool_class_name", "BasicBool", windowStyle,
-        0, 0, windowWidth, windowHeight, 0, 0, win32State.hInstance, 0);
+            windowExStyle, "BasicBool_class_name", "BasicBool", windowStyle,
+            0, 0, windowWidth, windowHeight, 0, 0, win32State.hInstance, 0);
 
-    if (win32State.handle == 0)
-    {
+    if (win32State.handle == 0) {
         MessageBoxA(0, "Window creation failed !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Window creation failed !");
         return;
@@ -213,14 +202,12 @@ Platform::Platform(const string &name, int width, int height)
     pfd.iLayerType = PFD_MAIN_PLANE;
 
     int nPixelFormat = ChoosePixelFormat(win32State.hDC, &pfd);
-    if (nPixelFormat == 0)
-    {
+    if (nPixelFormat == 0) {
         MessageBoxA(0, "Failed to choose pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to choose pixel format.");
         return;
     }
-    if (!SetPixelFormat(win32State.hDC, nPixelFormat, &pfd))
-    {
+    if (!SetPixelFormat(win32State.hDC, nPixelFormat, &pfd)) {
         MessageBoxA(0, "Failed to set pixel format.", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Failed to set pixel format.");
         return;
@@ -232,28 +219,27 @@ Platform::Platform(const string &name, int width, int height)
 
     // setting up OpenGL 3 context creation
     int attributes[] = {
-        WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-        WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-        WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        0};
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+            0};
 
     // As we have setup an OpenGL context earlier, we can now retrive the necessary functions to create an OpenGL 3 context.
-    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-    if (wglCreateContextAttribsARB)
-    {
+    PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress(
+            "wglCreateContextAttribsARB");
+    if (wglCreateContextAttribsARB) {
         win32State.glrc = wglCreateContextAttribsARB(win32State.hDC, NULL, attributes); // Create Opengl 3.x context
         // Remove dummy context
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(dummyOpenGLContext);
 
-        
+
         wglMakeCurrent(win32State.hDC, win32State.glrc);
 
-        PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+        PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress(
+                "wglSwapIntervalEXT");
         wglSwapIntervalEXT(0); // VSYNC not locked to 60 fps
-    }
-    else
-    {
+    } else {
         MessageBoxA(0, "Can't create OpenGL 3 context !", "FATAL ERROR", MB_ICONEXCLAMATION | MB_OK);
         LOGFATAL("Can't create OpenGL 3 context !");
         return;
@@ -264,15 +250,13 @@ Platform::Platform(const string &name, int width, int height)
     ShowWindow(win32State.handle, SW_SHOW);
 }
 
-Platform::~Platform()
-{
+Platform::~Platform() {
     DestroyWindow(win32State.handle);
     win32State.handle = 0;
     LOGDEBUG("Platform closed");
 }
 
-bool Platform::processEvents()
-{
+bool Platform::processEvents() {
     win32State.mouseWheel = 0; // reset wheel delta
 
     win32State.prevMouseLeftDown = win32State.mouseLeftDown;
@@ -280,8 +264,7 @@ bool Platform::processEvents()
     win32State.prevMouseMiddleDown = win32State.mouseMiddleDown;
 
     MSG message;
-    while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
-    {
+    while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&message);
         DispatchMessageA(&message);
     }
@@ -289,46 +272,45 @@ bool Platform::processEvents()
     return !win32State.shouldClose;
 }
 
-void Platform::swapBuffers()
-{
+void Platform::swapBuffers() {
     SwapBuffers(win32State.hDC);
 }
 
-int Platform::getMouseX()
-{
+int Platform::getMouseX() {
     return win32State.mouseX;
 }
 
-int Platform::getMouseY()
-{
+int Platform::getMouseY() {
     return win32State.mouseY;
 }
 
-int Platform::getMouseWheel(){
+int Platform::getMouseWheel() {
     return win32State.mouseWheel;
 }
 
 
-bool Platform::isMouseDown(MouseButton button){
-    return (button == MouseButton::LEFT && win32State.mouseLeftDown) || 
-    (button == MouseButton::MIDDLE && win32State.mouseMiddleDown ) || 
-    (button == MouseButton::RIGHT && win32State.mouseRightDown);
-}
-bool Platform::isMouseUP(MouseButton button){
-    return (button == MouseButton::LEFT && !win32State.mouseLeftDown) || 
-    (button == MouseButton::MIDDLE && !win32State.mouseMiddleDown ) || 
-    (button == MouseButton::RIGHT && !win32State.mouseRightDown);
+bool Platform::isMouseDown(MouseButton button) {
+    return (button == MouseButton::LEFT && win32State.mouseLeftDown) ||
+           (button == MouseButton::MIDDLE && win32State.mouseMiddleDown) ||
+           (button == MouseButton::RIGHT && win32State.mouseRightDown);
 }
 
-bool Platform::isMousePressed(MouseButton button){
-    return (button == MouseButton::LEFT && !win32State.prevMouseLeftDown && win32State.mouseLeftDown) ||
-    (button == MouseButton::RIGHT && !win32State.prevMouseRightDown && win32State.mouseRightDown) ||
-    (button == MouseButton::MIDDLE && !win32State.prevMouseMiddleDown && win32State.mouseMiddleDown);
+bool Platform::isMouseUP(MouseButton button) {
+    return (button == MouseButton::LEFT && !win32State.mouseLeftDown) ||
+           (button == MouseButton::MIDDLE && !win32State.mouseMiddleDown) ||
+           (button == MouseButton::RIGHT && !win32State.mouseRightDown);
 }
-bool Platform::isMouseReleased(MouseButton button){
+
+bool Platform::isMousePressed(MouseButton button) {
+    return (button == MouseButton::LEFT && !win32State.prevMouseLeftDown && win32State.mouseLeftDown) ||
+           (button == MouseButton::RIGHT && !win32State.prevMouseRightDown && win32State.mouseRightDown) ||
+           (button == MouseButton::MIDDLE && !win32State.prevMouseMiddleDown && win32State.mouseMiddleDown);
+}
+
+bool Platform::isMouseReleased(MouseButton button) {
     return (button == MouseButton::LEFT && win32State.prevMouseLeftDown && !win32State.mouseLeftDown) ||
-    (button == MouseButton::RIGHT && win32State.prevMouseRightDown && !win32State.mouseRightDown) ||
-    (button == MouseButton::MIDDLE && win32State.prevMouseMiddleDown && !win32State.mouseMiddleDown);
+           (button == MouseButton::RIGHT && win32State.prevMouseRightDown && !win32State.mouseRightDown) ||
+           (button == MouseButton::MIDDLE && win32State.prevMouseMiddleDown && !win32State.mouseMiddleDown);
 }
 
 #endif
