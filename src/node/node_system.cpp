@@ -1,7 +1,5 @@
-#pragma once
 #include "node_system.hpp"
 #include "render/backend.hpp"
-#include "render/text.hpp"
 #include <cmath>
 #include <optional>
 

@@ -4,6 +4,7 @@
 #include "look_and_feel.hpp"
 #include <functional>
 #include <optional>
+#include <memory>
 
 class Node;
 struct Link;

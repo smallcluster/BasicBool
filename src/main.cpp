@@ -1,8 +1,7 @@
 #include "core/defines.hpp"
+#include "core/math.hpp"
 #include "platform/platform.hpp"
 #include "render/backend.hpp"
-#include "render/shapes.hpp"
-#include "core/math.hpp"
 #include "render/text.hpp"
 #include "node/node_system.hpp"
 #include "node/nodes.hpp"
@@ -10,7 +9,6 @@
 #include <thread>
 #include <cmath>
 #include <optional>
-#include <thread>
 
 using namespace std::chrono_literals;
 

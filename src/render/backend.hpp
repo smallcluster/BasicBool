@@ -78,16 +78,17 @@ public:
         LOGERROR("VertexBufferLayout::push() -> unknow type");
     }
 
-    template <>
-    void push<float>(unsigned int count)
-    {
-        m_elements.push_back({GL_FLOAT, count, GL_FALSE});
-        m_stride += VertexBufferElement::getTypeSize(GL_FLOAT) * count;
-    }
-
     inline const std::vector<VertexBufferElement> &getElements() const;
     inline unsigned int getStride() const;
 };
+
+ template<> inline void VertexBufferLayout::push<float>(unsigned int count)
+{
+    m_elements.push_back({GL_FLOAT, count, GL_FALSE});
+    m_stride += VertexBufferElement::getTypeSize(GL_FLOAT) * count;
+}
+
+
 
 class VertexArray
 {
