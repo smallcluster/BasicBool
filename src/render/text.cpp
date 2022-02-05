@@ -137,7 +137,7 @@ float Font::getWidth(const string &text, float size) {
         else
             g = m_glyphs[c];
 
-        lastAdvance = g.advance * scale;
+        lastAdvance = (g.advance-m_padding.x) * scale;
         lastWidth = g.dim.x * scale;
         x += lastAdvance;
     }
@@ -150,10 +150,14 @@ float Font::getWidth(const string &text, float size) {
     return max;
 }
 
+vec2 Font::getDim(const string &text, float size){
+    return {getWidth(text, size), getHeight(text, size)};
+}
+
 void Font::text(const string &textString, vec2 position, float size, vec3 color) {
     Text t;
     t.fontSize = size;
-    t.position = position + vec2((m_padding.x * 2) / size, 0);
+    t.position = position;
     t.textString = textString;
     t.color = color;
     m_texts.push_back(t);
@@ -330,7 +334,7 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
             // pos
             //vec2 start = pos + (g.offset - m_padding.xy) * scale;
             vec2 start = pos + g.offset * scale;
-            vec2 size = (vec2(g.dim.x, g.dim.y) + m_padding.xy) * scale;
+            vec2 size = vec2(g.dim.x, g.dim.y) * scale;
 
             // uvs
             vec2 uvStart = vec2(g.pos.x, g.pos.y) / texDim;
@@ -342,7 +346,7 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
                                              color.r, color.g, color.b});
 
             // advance writer head
-            pos.x += g.advance * scale;
+            pos.x += (g.advance-m_padding.x) * scale;
             nbChars++;
         }
     }

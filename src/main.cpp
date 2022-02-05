@@ -5,6 +5,7 @@
 #include "render/text.hpp"
 #include "node/node_system.hpp"
 #include "node/nodes.hpp"
+#include "gui/gui.hpp"
 #include <chrono>
 #include <thread>
 #include <cmath>
@@ -88,6 +89,11 @@ int main(int argc, char const *argv[]) {
     NodeManager.addNode(or1);
     NodeManager.addNode(not3);
 
+    // GUI
+    gui::GUIManager guiManager;
+    bool addNodeMenu = false;
+    vec2 addNodeMenuPos;
+
     /*
     for (int i = 0; i < 10000; i++)
     {
@@ -108,7 +114,8 @@ int main(int argc, char const *argv[]) {
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
     }
-    */
+     */
+
 
     // projection size
     double avgFps = 0;
@@ -150,7 +157,7 @@ int main(int argc, char const *argv[]) {
         mat4 pmat(vec4(2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float) height, 0, 0), vec4(0, 0, 1, 0),
                   vec4(-1, 1, 0, 1));
 
-        if (platform.isMousePressed(MouseButton::LEFT)) {
+        if (platform.isMousePressed(MouseButton::LEFT) && !addNodeMenu) {
             startConnector = NodeManager.getConnectorAt(worldMouse);
 
             if (!startConnector) {
@@ -194,9 +201,10 @@ int main(int argc, char const *argv[]) {
                 if (node) {
                     NodeManager.selectNode(node.value());
                     NodeManager.removeSelected();
+                } else {
+                    addNodeMenu = true;
+                    addNodeMenuPos = mouse;
                 }
-
-
             }
         }
 
@@ -286,6 +294,28 @@ int main(int argc, char const *argv[]) {
 
         if (boxSelection) {
             NodeManager.drawBoxSelection(boxSelectionStart, worldMouse, pmat, view);
+        }
+
+        if (addNodeMenu) {
+            std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
+            int index = guiManager.dropDownMenu(list, addNodeMenuPos, pmat, {"Add new node"});
+            if (platform.isMousePressed(MouseButton::LEFT)) {
+                addNodeMenu = false;
+                switch (index) {
+                    case 0:
+                        NodeManager.addNode(new TrueNode(worldMouse));
+                        break;
+                    case 1:
+                        NodeManager.addNode(new NotNode(worldMouse));
+                        break;
+                    case 2:
+                        NodeManager.addNode(new OrNode(worldMouse));
+                        break;
+                    case 3:
+                        NodeManager.addNode(new AndNode(worldMouse));
+                        break;
+                }
+            }
         }
 
         // wait time

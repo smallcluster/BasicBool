@@ -10,8 +10,8 @@ struct NodeStyle {
     vec3 bodyColor = vec3(0.2);
     vec3 headerTextColor = vec3(1);
     vec3 connectorTextColor = vec3(1);
-    float headerTextSize = 20;
-    float connectorTextSize = 16;
+    float headerTextSize = 22;
+    float connectorTextSize = 18;
     float connectorRadius = 8;
     vec2 connectorMargin = vec2(4, 4);
     float inOutDist = 32;
