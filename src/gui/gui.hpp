@@ -16,8 +16,8 @@ namespace gui {
         float dropDownMargin = 4.0f;
         vec3 backgoundColor = vec3(0.1f);
         vec3 textColor = vec3(1.0f);
-        vec3 dropDownHoverColor = vec3(0.3f);
-        vec3 dropDownColor = vec3(0.15f);
+        vec3 dropDownHoverColor = vec3(1, 0.5f, 0);
+        vec3 dropDownColor = vec3(0.2f);
         Font &font;
 
         Theme(Font &font) : font(font) {};
@@ -50,7 +50,6 @@ namespace gui {
     public:
 
         GUIManager() : guiRectShader("gui_rect"){}
-
 
         // TODO : Improve this
         int dropDownMenu(const std::vector<string> &list, vec2 pos, const mat4 &pmat, std::optional<string> header) {
@@ -149,6 +148,7 @@ namespace gui {
 
             rectDrawCalls.clear();
         }
+
     };
 
 }

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.9)
 project(BasicBool)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXE_LINKER_FLAGS -static)
 
 add_executable(
         ${PROJECT_NAME}
@@ -33,8 +34,7 @@ add_executable(
         src/node/look_and_feel.hpp
 
         # GUI
-        src/gui/gui.hpp
-        src/gui/layouts.hpp src/gui/widgets.hpp)
+        src/gui/gui.hpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
