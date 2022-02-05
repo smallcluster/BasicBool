@@ -91,8 +91,13 @@ int main(int argc, char const *argv[]) {
 
     // GUI
     gui::GUIManager guiManager;
-    bool addNodeMenu = false;
-    vec2 addNodeMenuPos;
+
+    // 0 -> action on node
+    // 1 -> replace nodes
+    // 2 -> add nodes
+    int contextMenu = -1;
+    vec2 contextMenuPos;
+
 
     /*
     for (int i = 0; i < 10000; i++)
@@ -157,7 +162,7 @@ int main(int argc, char const *argv[]) {
         mat4 pmat(vec4(2.0f / (float) width, 0, 0, 0), vec4(0, -2.0f / (float) height, 0, 0), vec4(0, 0, 1, 0),
                   vec4(-1, 1, 0, 1));
 
-        if (platform.isMousePressed(MouseButton::LEFT) && !addNodeMenu) {
+        if (platform.isMousePressed(MouseButton::LEFT) && contextMenu == -1) {
             startConnector = NodeManager.getConnectorAt(worldMouse);
 
             if (!startConnector) {
@@ -199,11 +204,15 @@ int main(int argc, char const *argv[]) {
             } else {
                 auto node = NodeManager.getNodeAt(worldMouse);
                 if (node) {
-                    NodeManager.selectNode(node.value());
-                    NodeManager.removeSelected();
+                    if(!NodeManager.nodeIsSelected(node.value())){
+                        NodeManager.deselectAll();
+                        NodeManager.selectNode(node.value());
+                    }
+                    contextMenu = 0;
+                    contextMenuPos = mouse;
                 } else {
-                    addNodeMenu = true;
-                    addNodeMenuPos = mouse;
+                    contextMenu = 2;
+                    contextMenuPos = mouse;
                 }
             }
         }
@@ -296,28 +305,62 @@ int main(int argc, char const *argv[]) {
             NodeManager.drawBoxSelection(boxSelectionStart, worldMouse, pmat, view);
         }
 
-        if (addNodeMenu) {
-            std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
-            int index = guiManager.dropDownMenu(list, addNodeMenuPos, pmat, {"Add new node"});
-            if (platform.isMousePressed(MouseButton::LEFT)) {
-                addNodeMenu = false;
-                vec2 pos = (invView*vec4(addNodeMenuPos, 0, 1)).xy;
-                switch (index) {
-                    case 0:
-                        NodeManager.addNode(new TrueNode(pos));
-                        break;
-                    case 1:
-                        NodeManager.addNode(new NotNode(pos));
-                        break;
-                    case 2:
-                        NodeManager.addNode(new OrNode(pos));
-                        break;
-                    case 3:
-                        NodeManager.addNode(new AndNode(pos));
-                        break;
+        switch (contextMenu) {
+            case 0:
+            {
+                std::vector<string> list = {"Remove", "Replace"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Action menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                    vec2 pos = (invView*vec4(contextMenuPos, 0, 1)).xy;
+                    switch (index) {
+                        case 0:
+                            NodeManager.removeSelected();
+                            break;
+                        case 1:
+                            contextMenu = 1;
+                            break;
+                    }
                 }
             }
+                break;
+            case 1:{
+                std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Replace nodes menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                    if(index >= 0){
+                        // TODO : Implement this and try to keep links
+                        //NodeManager.replaceSelected(list[index]);
+                    }
+                }
+            }
+                break;
+            case 2 : {
+                std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Add node menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                    vec2 pos = (invView*vec4(contextMenuPos, 0, 1)).xy;
+                    switch (index) {
+                        case 0:
+                            NodeManager.addNode(new TrueNode(pos));
+                            break;
+                        case 1:
+                            NodeManager.addNode(new NotNode(pos));
+                            break;
+                        case 2:
+                            NodeManager.addNode(new OrNode(pos));
+                            break;
+                        case 3:
+                            NodeManager.addNode(new AndNode(pos));
+                            break;
+                    }
+                }
+            } break;
         }
+
+
 
         // wait time
         /*
