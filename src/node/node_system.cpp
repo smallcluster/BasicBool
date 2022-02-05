@@ -184,7 +184,8 @@ void NodeManager::removeSelected() {
 }
 
 std::optional<Node *> NodeManager::getNodeAt(vec2 mouse) {
-    for (Node *node: nodes) {
+    for (int i=nodes.size()-1; i >=0; --i) {
+        Node *node = nodes[i];
         vec2 size = node->size;
         vec2 pos = node->pos;
         if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y)
@@ -194,7 +195,8 @@ std::optional<Node *> NodeManager::getNodeAt(vec2 mouse) {
 }
 
 std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse) {
-    for (Node *node: nodes) {
+    for (int i=nodes.size()-1; i >=0; --i) {
+        const Node *node = nodes[i];
         vec2 size = node->size;
         vec2 pos = node->pos;
         if (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y) {
@@ -373,8 +375,7 @@ void NodeManager::renderShadows(const mat4 &pmat, const mat4 &view) {
     std::vector<float> vertices;
     vertices.reserve(visibleNodes.size() * 5);
 
-    for (int i=visibleNodes.size()-1; i >=0; --i) {
-        const Node *node = visibleNodes[i];
+    for (const Node *node : visibleNodes) {
         vec2 pos = node->pos - vec2(nodeStyle->shadowSize);
         vec2 size = node->size + vec2(nodeStyle->shadowSize * 2);
         vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, node->selected ? 1.0f : 0.0f});
@@ -401,8 +402,7 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view) {
     std::vector<float> vertices;
     vertices.reserve(visibleNodes.size() * 6);
 
-    for (int i=visibleNodes.size()-1; i >=0; --i) {
-        const Node *node = visibleNodes[i];
+    for (const Node *node : visibleNodes) {
         vec2 pos = node->pos;
         vec2 size = node->size;
         float headerHeight = node->headerSize.y;
@@ -428,8 +428,7 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view) {
 void NodeManager::renderText(const mat4 &pmat, const mat4 &view) {
     if (visibleNodes.empty())
         return;
-    for (int i=visibleNodes.size()-1; i >=0; --i) {
-        const Node *node = visibleNodes[i];
+    for (const Node *node : visibleNodes) {
         nodeStyle->font.text(node->name, node->pos + node->textPos, nodeStyle->headerTextSize,
                              nodeStyle->headerTextColor);
         for (const Connector *c: node->inputs) {

@@ -301,18 +301,19 @@ int main(int argc, char const *argv[]) {
             int index = guiManager.dropDownMenu(list, addNodeMenuPos, pmat, {"Add new node"});
             if (platform.isMousePressed(MouseButton::LEFT)) {
                 addNodeMenu = false;
+                vec2 pos = (invView*vec4(addNodeMenuPos, 0, 1)).xy;
                 switch (index) {
                     case 0:
-                        NodeManager.addNode(new TrueNode(worldMouse));
+                        NodeManager.addNode(new TrueNode(pos));
                         break;
                     case 1:
-                        NodeManager.addNode(new NotNode(worldMouse));
+                        NodeManager.addNode(new NotNode(pos));
                         break;
                     case 2:
-                        NodeManager.addNode(new OrNode(worldMouse));
+                        NodeManager.addNode(new OrNode(pos));
                         break;
                     case 3:
-                        NodeManager.addNode(new AndNode(worldMouse));
+                        NodeManager.addNode(new AndNode(pos));
                         break;
                 }
             }
