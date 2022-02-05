@@ -34,7 +34,7 @@ add_executable(
 
         # GUI
         src/gui/gui.hpp
-)
+        src/gui/layouts.hpp src/gui/widgets.hpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 

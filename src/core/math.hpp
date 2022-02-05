@@ -192,20 +192,11 @@ struct Vector<2> {
         return data[i];
     }
 
-    Vector<2>(float a, float b) {
-        x = a;
-        y = b;
-    }
+    Vector<2>(float a, float b) : x(a), y(b) {}
 
-    Vector<2>(float a) {
-        x = a;
-        y = a;
-    }
+    Vector<2>(float a) : x(a), y(a) {}
 
-    Vector<2>() {
-        x = 0;
-        y = 0;
-    }
+    Vector<2>() : x(0), y(0) {}
 };
 
 // vec3
@@ -231,29 +222,13 @@ struct Vector<3> {
         return data[i];
     }
 
-    Vector<3>(float a, float b, float c) {
-        x = a;
-        y = b;
-        z = c;
-    }
+    Vector<3>(float a, float b, float c) : x(a), y(b), z(c) {}
 
-    Vector<3>(float a) {
-        x = a;
-        y = a;
-        z = a;
-    }
+    Vector<3>(float a) : x(a), y(a), z(a) {}
 
-    Vector<3>() {
-        x = 0;
-        y = 0;
-        z = 0;
-    }
+    Vector<3>() : x(0), y(0), z(0) {}
 
-    Vector<3>(const Vector<2> &vec, float v) {
-        x = vec.x;
-        y = vec.y;
-        z = v;
-    }
+    Vector<3>(const Vector<2> &vec, float v) : x(vec.x), y(vec.y), z(v) {}
 
 };
 
@@ -282,40 +257,15 @@ struct Vector<4> {
         return data[i];
     }
 
-    Vector<4>(float a, float b, float c, float d) {
-        x = a;
-        y = b;
-        z = c;
-        w = d;
-    }
+    Vector<4>(float a, float b, float c, float d) : x(a), y(b), z(c), w(d) {}
 
-    Vector<4>(float a) {
-        x = a;
-        y = a;
-        z = a;
-        w = a;
-    }
+    Vector<4>(float a) : x(a), y(a), z(a), w(a) {}
 
-    Vector<4>() {
-        x = 0;
-        y = 0;
-        z = 0;
-        w = 0;
-    }
+    Vector<4>() : x(0), y(0), z(0), w(0) {}
 
-    Vector<4>(const Vector<2> &vec, float v1, float v2) {
-        x = vec.x;
-        y = vec.y;
-        z = v1;
-        w = v2;
-    }
+    Vector<4>(const Vector<2> &vec, float v1, float v2) : x(vec.x), y(vec.y), z(v1), w(v2) {}
 
-    Vector<4>(const Vector<3> &vec, float v) {
-        x = vec.x;
-        y = vec.y;
-        z = vec.z;
-        w = v;
-    }
+    Vector<4>(const Vector<3> &vec, float v) : x(vec.x), y(vec.y), z(vec.z), w(v) {}
 };
 
 // ----------------- MATRIX ----------------- //
@@ -515,42 +465,29 @@ struct Matrix<3, 3> {
         return s;
     }
 
-    Matrix<3, 3>(const Vector<3> &c1, const Vector<3> &c2, const Vector<3> &c3) {
-        data[0] = c1.x;
-        data[1] = c1.y;
-        data[2] = c1.z;
-        data[3] = c2.x;
-        data[4] = c2.y;
-        data[5] = c2.z;
-        data[6] = c3.x;
-        data[7] = c3.y;
-        data[8] = c3.z;
-    }
+    Matrix<3, 3>(const Vector<3> &c1, const Vector<3> &c2, const Vector<3> &c3) :
+            data{c1.x,
+                 c1.y,
+                 c1.z,
+                 c2.x,
+                 c2.y,
+                 c2.z,
+                 c3.x,
+                 c3.y,
+                 c3.z} {}
 
-    Matrix<3, 3>(const Matrix<2, 2> &m) {
-        data[0] = m[{0, 0}];
-        data[1] = m[{0, 1}];
-        data[2] = 0;
-        data[3] = m[{1, 0}];
-        data[4] = m[{1, 1}];
-        data[5] = 0;
-        data[6] = 0;
-        data[7] = 0;
-        data[8] = 0;
-    }
+    Matrix<3, 3>(const Matrix<2, 2> &m) : data{
+            m[{0, 0}],
+            m[{0, 1}],
+            0,
+            m[{1, 0}],
+            m[{1, 1}],
+            0,
+            0,
+            0,
+            0} {}
 
-    Matrix<3, 3>() {
-        data[0] = 0;
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-
-        data[6] = 0;
-        data[7] = 0;
-        data[8] = 0;
-    }
+    Matrix<3, 3>() : data{0} {}
 };
 
 // mat4
@@ -587,60 +524,41 @@ struct Matrix<4, 4> {
         return s;
     }
 
-    Matrix<4, 4>(const Vector<4> &c1, const Vector<4> &c2, const Vector<4> &c3, const Vector<4> &c4) {
-        data[0] = c1.x;
-        data[1] = c1.y;
-        data[2] = c1.z;
-        data[3] = c1.w;
-        data[4] = c2.x;
-        data[5] = c2.y;
-        data[6] = c2.z;
-        data[7] = c2.w;
-        data[8] = c3.x;
-        data[9] = c3.y;
-        data[10] = c3.z;
-        data[11] = c3.w;
-        data[12] = c4.x;
-        data[13] = c4.y;
-        data[14] = c4.z;
-        data[15] = c4.w;
-    }
+    Matrix<4, 4>(const Vector<4> &c1, const Vector<4> &c2, const Vector<4> &c3, const Vector<4> &c4) : data{
+            c1.x,
+            c1.y,
+            c1.z,
+            c1.w,
+            c2.x,
+            c2.y,
+            c2.z,
+            c2.w,
+            c3.x,
+            c3.y,
+            c3.z,
+            c3.w,
+            c4.x,
+            c4.y,
+            c4.z,
+            c4.w} {}
 
-    Matrix<4, 4>(const Matrix<3, 3> &m) {
-        data[0] = m[{0, 0}];
-        data[1] = m[{0, 1}];
-        data[2] = m[{0, 2}];
-        data[3] = 0;
-        data[4] = m[{1, 0}];
-        data[5] = m[{1, 1}];
-        data[6] = m[{1, 2}];
-        data[7] = 0;
-        data[8] = m[{2, 0}];
-        data[9] = m[{2, 1}];
-        data[10] = m[{2, 2}];
-        data[11] = 0;
-        data[12] = 0;
-        data[13] = 0;
-        data[14] = 0;
-        data[15] = 0;
-    }
+    Matrix<4, 4>(const Matrix<3, 3> &m) : data{
+            m[{0, 0}],
+            m[{0, 1}],
+            m[{0, 2}],
+            0,
+            m[{1, 0}],
+            m[{1, 1}],
+            m[{1, 2}],
+            0,
+            m[{2, 0}],
+            m[{2, 1}],
+            m[{2, 2}],
+            0,
+            0,
+            0,
+            0,
+            0} {}
 
-    Matrix<4, 4>() {
-        data[0] = 0;
-        data[1] = 0;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        data[6] = 0;
-        data[7] = 0;
-        data[8] = 0;
-        data[9] = 0;
-        data[10] = 0;
-        data[11] = 0;
-        data[12] = 0;
-        data[13] = 0;
-        data[14] = 0;
-        data[15] = 0;
-    }
+    Matrix<4, 4>() : data{0} {}
 };
