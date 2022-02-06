@@ -325,7 +325,7 @@ int main(int argc, char const *argv[]) {
             }
                 break;
             case 1:{
-                std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
+                std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Replace nodes menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -337,7 +337,7 @@ int main(int argc, char const *argv[]) {
             }
                 break;
             case 2 : {
-                std::vector<string> list = {"TRUE", "NOT", "OR", "AND"};
+                std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Add node menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -354,6 +354,9 @@ int main(int argc, char const *argv[]) {
                             break;
                         case 3:
                             NodeManager.addNode(new AndNode(pos));
+                            break;
+                        case 4:
+                            NodeManager.addNode(new XorNode(pos));
                             break;
                     }
                 }

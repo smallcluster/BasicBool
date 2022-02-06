@@ -71,3 +71,22 @@ public:
         inputs[1]->state = false;
     }
 };
+
+class XorNode : public Node {
+public:
+    XorNode(vec2 pos) : Node("XOR", pos) {
+        addInput("in1");
+        addInput("in2");
+        addOutput("out");
+    }
+
+    void update() override {
+        outputs[0]->state = (inputs[0]->state && !inputs[1]->state) || (!inputs[0]->state && inputs[1]->state);
+    }
+
+    void reset() override {
+        outputs[0]->state = false;
+        inputs[0]->state = false;
+        inputs[1]->state = false;
+    }
+};
