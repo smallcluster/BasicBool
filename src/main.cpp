@@ -7,7 +7,6 @@
 #include "node/nodes.hpp"
 #include "gui/gui.hpp"
 #include <chrono>
-#include <cstdint>
 #include <ratio>
 #include <thread>
 #include <cmath>
@@ -273,30 +272,7 @@ int main(int argc, char const *argv[]) {
 
         // ---- simulation ----
 
-        // start cycle
-        if (!unlimitedTickTime) {
-            if (!beginUpdateDone) {
-                NodeManager.beginUpdate();
-                beginUpdateDone = true;
-                simStartTime = std::chrono::steady_clock::now();
-            }
-            auto time = std::chrono::steady_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time - simStartTime);
-            auto t = (float) ((double) duration.count() / (double) tickTime.count());
-            if (t > 1)
-                t = 1;
-            // update animation
-            NodeManager.setProgress(t);
-            // end cycle
-            if (duration >= tickTime) {
-                NodeManager.endUpdate();
-                beginUpdateDone = false;
-            }
-        } else {
-            NodeManager.beginUpdate();
-            NodeManager.setProgress(1);
-            NodeManager.endUpdate();
-        }
+
 
         NodeManager.render(pmat, view, (invView * vec4(0, 0, 0, 1)).xy,
                            (invView * vec4((float) width, (float) height, 0, 1)).xy);
@@ -405,21 +381,42 @@ int main(int argc, char const *argv[]) {
         }
 
 
-
-        // TODO : Use system clock to increase sleep resolution
-
         auto endTime = std::chrono::steady_clock::now();
         auto workTime = endTime-startTime;
-        auto targetTime = std::chrono::duration<uint64_t , std::ratio<1, 80>>{1}; // 80 Hz
-        if(workTime < targetTime){
-            std::this_thread::sleep_for(targetTime - workTime);
+        static auto targetTime = std::chrono::duration<long long , std::ratio<1, 60>>{1}; // 60 Hz
+
+        // TODO : improve this busy update loop
+        while (std::chrono::steady_clock::now()-startTime < targetTime){
+            // start cycle
+            if (!unlimitedTickTime) {
+                if (!beginUpdateDone) {
+                    NodeManager.beginUpdate();
+                    beginUpdateDone = true;
+                    simStartTime = std::chrono::steady_clock::now();
+                }
+                auto time = std::chrono::steady_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time - simStartTime);
+                auto t = (float) ((double) duration.count() / (double) tickTime.count());
+                if (t > 1)
+                    t = 1;
+                // update animation
+                NodeManager.setProgress(t);
+                // end cycle
+                if (duration >= tickTime) {
+                    NodeManager.endUpdate();
+                    beginUpdateDone = false;
+                }
+            } else {
+                NodeManager.beginUpdate();
+                NodeManager.setProgress(1);
+                NodeManager.endUpdate();
+            }
         }
 
+        // FPS info
         auto afterSleep = std::chrono::steady_clock::now();
         long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(afterSleep-startTime).count();
-
         int fps = (int) (1000000.0 / (double) finalElapsedTime);
-
         string text = std::to_string(fps);
         font.text("fps : " + text, vec2(0, height-font.getHeight("fps : " + text, 20)), 20, vec3(1));
         font.render(pmat);
