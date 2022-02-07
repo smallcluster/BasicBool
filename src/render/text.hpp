@@ -26,7 +26,7 @@ struct Glyph {
 struct Text {
     string textString;
     float fontSize;
-    vec2 position;
+    vec3 position;
     vec3 color;
 };
 
@@ -55,6 +55,7 @@ public:
     vec2 getDim(const string &text, float size);
 
     void text(const string &textString, vec2 position, float size, vec3 color);
+    void text(const string &textString, vec3 position, float size, vec3 color);
 
     void render(const mat4 &pmat, const mat4 &view = identity<4>());
 

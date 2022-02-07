@@ -3,14 +3,17 @@
 layout (location = 0) in vec4 aRect;
 layout (location = 1) in float aHeaderHeight;
 layout (location = 2) in float aSelected;
+layout (location = 3) in float aDepth;
 
 out float vsSelected;
 out float vsHeaderHeight;
+out float vsdepth;
 
 void main(){
     gl_Position = aRect;
     vsHeaderHeight = aHeaderHeight;
     vsSelected = aSelected;
+    vsdepth = aDepth;
 }
 
 #SHADER GEOMETRY
@@ -23,6 +26,7 @@ uniform mat4 view;
 
 in float vsHeaderHeight[];
 in float vsSelected[];
+in float vsdepth[];
 
 out vec2 uv;
 out vec2 size;
@@ -33,27 +37,28 @@ void main(){
     selected = vsSelected[0];
     vec4 rect = gl_in[0].gl_Position;
     mat4 transfrom = projection*view;
+    float depth = vsdepth[0];
 
     size = vec2(rect.z, rect.w);
     headerHeight = vsHeaderHeight[0];
 
     // p1
-    gl_Position = transfrom*vec4(rect.x, rect.y+rect.w, 0, 1);
+    gl_Position = transfrom*vec4(rect.x, rect.y+rect.w, depth, 1);
     uv = vec2(0,1);
     EmitVertex();
 
     // p2
-    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y+rect.w, 0, 1);
+    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y+rect.w, depth, 1);
     uv = vec2(1,1);
     EmitVertex();
 
     // p3
-    gl_Position = transfrom*vec4(rect.x, rect.y, 0, 1);
+    gl_Position = transfrom*vec4(rect.x, rect.y, depth, 1);
     uv = vec2(0,0);
     EmitVertex();
 
     // p4
-    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y, 0, 1);
+    gl_Position = transfrom*vec4(rect.x+rect.z, rect.y, depth, 1);
     uv = vec2(1,0);
     EmitVertex();
 
@@ -96,6 +101,11 @@ void main(){
     float alpha = clamp(0.5 - pixelDist, 0.0, 1.0);
     float header = 1-step(headerHeight, p.y);
     vec4 col = vec4( (selected == 1.0 ? selectedColor : headerColor)*header+bodyColor*(1-header), alpha);
-    FragColor = col;
+
+    // Used for the depth buffer
+    if(col.a <= 0.01)
+        discard;
+    else
+        FragColor = col;
 }
 

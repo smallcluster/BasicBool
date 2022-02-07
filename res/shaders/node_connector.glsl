@@ -1,9 +1,13 @@
 #SHADER VERTEX
 #version 330 core
 layout (location = 0) in vec4 data; // (x,y,r,state)
+layout (location = 1) in float aDepth;
+
+out float vsdepth;
 
 void main(){
     gl_Position = data;
+    vsdepth = aDepth;
 }
 
 #SHADER GEOMETRY
@@ -18,31 +22,34 @@ out vec2 uv;
 out float radius;
 out float status;
 
+in float vsdepth[];
+
 void main(){
 
     vec4 data = gl_in[0].gl_Position;
     mat4 transfrom = projection*view;
+    float depth = vsdepth[0];
 
     radius = data.z;
     status = data.w;
 
     // p1
-    gl_Position = transfrom*vec4(data.x-radius, data.y+radius, 0, 1);
+    gl_Position = transfrom*vec4(data.x-radius, data.y+radius, depth, 1);
     uv = vec2(0,1);
     EmitVertex();
 
     // p2
-    gl_Position = transfrom*vec4(data.x+radius, data.y+radius, 0, 1);
+    gl_Position = transfrom*vec4(data.x+radius, data.y+radius, depth, 1);
     uv = vec2(1,1);
     EmitVertex();
 
     // p3
-    gl_Position = transfrom*vec4(data.x-radius, data.y-radius, 0, 1);
+    gl_Position = transfrom*vec4(data.x-radius, data.y-radius, depth, 1);
     uv = vec2(0,0);
     EmitVertex();
 
     // p4
-    gl_Position = transfrom*vec4(data.x+radius, data.y-radius, 0, 1);
+    gl_Position = transfrom*vec4(data.x+radius, data.y-radius, depth, 1);
     uv = vec2(1,0);
     EmitVertex();
 
@@ -68,7 +75,6 @@ float circle(vec2 p, vec2 c, float r){
     vec2 d = abs(p-c);
     return length(max(d, 0.0)) - r;
 }
-
 
 void main(){
     // fragment pos in the rectangle

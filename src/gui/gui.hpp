@@ -21,7 +21,6 @@ namespace gui {
         Font &font;
 
         Theme(Font &font) : font(font) {};
-
         Theme() : font(Font::getDefault()) {};
     };
 

@@ -114,12 +114,23 @@ void NodeManager::addLink(Link *link) {
 void NodeManager::render(const mat4 &pmat, const mat4 &view, const vec2 &camstart, const vec2 &camend) {
     cullNodes(camstart, camend);
     cullLinks(camstart, camend);
-
     renderLinks(pmat, view);
     renderShadows(pmat, view);
+    //renderNodes(pmat, view);
+
+    glDepthMask(1); // enable depth buffer write
+    glColorMask(1,1,1,1); // write to the color buffer
+    glDepthFunc(GL_ALWAYS);
     renderNodes(pmat, view);
+
+    // Render Text+connector in batch while culling their pixels with the depth buffer
+    glDepthMask(0);
+    glColorMask(1,1,1,1);
+    glDepthFunc(GL_EQUAL); // texts & connectors must be on the same level as their parent node.
     renderConnectors(pmat, view);
     renderText(pmat, view);
+
+    glDepthFunc(GL_ALWAYS);
 
     // TODO : remove this
     nodeStyle->font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(1));
@@ -184,7 +195,7 @@ void NodeManager::removeSelected() {
 }
 
 std::optional<Node *> NodeManager::getNodeAt(vec2 mouse) {
-    for (int i=nodes.size()-1; i >=0; --i) {
+    for (int i = nodes.size() - 1; i >= 0; --i) {
         Node *node = nodes[i];
         vec2 size = node->size;
         vec2 pos = node->pos;
@@ -195,7 +206,7 @@ std::optional<Node *> NodeManager::getNodeAt(vec2 mouse) {
 }
 
 std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse) {
-    for (int i=nodes.size()-1; i >=0; --i) {
+    for (int i = nodes.size() - 1; i >= 0; --i) {
         const Node *node = nodes[i];
         vec2 size = node->size;
         vec2 pos = node->pos;
@@ -375,7 +386,7 @@ void NodeManager::renderShadows(const mat4 &pmat, const mat4 &view) {
     std::vector<float> vertices;
     vertices.reserve(visibleNodes.size() * 5);
 
-    for (const Node *node : visibleNodes) {
+    for (const Node *node: visibleNodes) {
         vec2 pos = node->pos - vec2(nodeStyle->shadowSize);
         vec2 size = node->size + vec2(nodeStyle->shadowSize * 2);
         vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, node->selected ? 1.0f : 0.0f});
@@ -402,11 +413,16 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view) {
     std::vector<float> vertices;
     vertices.reserve(visibleNodes.size() * 6);
 
-    for (const Node *node : visibleNodes) {
+    for (int i=0; i < visibleNodes.size(); i++) {
+        const Node *node = visibleNodes[i];
         vec2 pos = node->pos;
         vec2 size = node->size;
         float headerHeight = node->headerSize.y;
-        vertices.insert(vertices.end(), {pos.x, pos.y, size.x, size.y, headerHeight, node->selected ? 1.0f : 0.0f});
+        vertices.insert(vertices.end(), {
+            pos.x, pos.y, size.x, size.y,
+            headerHeight,
+            node->selected ? 1.0f : 0.0f,
+            1.0f - (float) i/ (float) visibleNodes.size()});
     }
     VertexArray vao;
     VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
@@ -414,6 +430,7 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view) {
     layout.push<float>(4); // rect
     layout.push<float>(1); // headerHeight
     layout.push<float>(1); // selected
+    layout.push<float>(1); // depth
     vao.addBuffer(vbo, layout);
     nodeShader.use();
     nodeShader.setMat4("projection", pmat);
@@ -428,15 +445,16 @@ void NodeManager::renderNodes(const mat4 &pmat, const mat4 &view) {
 void NodeManager::renderText(const mat4 &pmat, const mat4 &view) {
     if (visibleNodes.empty())
         return;
-    for (const Node *node : visibleNodes) {
-        nodeStyle->font.text(node->name, node->pos + node->textPos, nodeStyle->headerTextSize,
+    for (int i=0; i < visibleNodes.size(); i++) {
+        const Node *node = visibleNodes[i];
+        nodeStyle->font.text(node->name, vec3(node->pos + node->textPos, 1.0f - (float) i / (float) visibleNodes.size()), nodeStyle->headerTextSize,
                              nodeStyle->headerTextColor);
         for (const Connector *c: node->inputs) {
-            nodeStyle->font.text(c->name, c->parent->pos + c->textPos, nodeStyle->connectorTextSize,
+            nodeStyle->font.text(c->name, vec3(c->parent->pos + c->textPos, 1.0f - (float) i / (float) visibleNodes.size()), nodeStyle->connectorTextSize,
                                  nodeStyle->connectorTextColor);
         }
         for (const Connector *c: node->outputs) {
-            nodeStyle->font.text(c->name, c->parent->pos + c->textPos, nodeStyle->connectorTextSize,
+            nodeStyle->font.text(c->name, vec3(c->parent->pos + c->textPos, 1.0f - (float) i / (float) visibleNodes.size()), nodeStyle->connectorTextSize,
                                  nodeStyle->connectorTextColor);
         }
     }
@@ -448,33 +466,35 @@ void NodeManager::renderConnectors(const mat4 &pmat, const mat4 &view) {
         return;
 
     std::vector<float> vertices;
-    int i = 0;
-    for (const Node *node: visibleNodes) {
+    int n = 0;
+    for (int i=0; i < visibleNodes.size(); i++) {
+        const Node *node = visibleNodes[i];
 
         for (const Connector *c: node->inputs) {
             vec2 pos = c->parent->pos + c->pos;
             float state = c->state ? 1.0f : 0.0f;
-            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state});
-            i++;
+            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state, 1.0f - (float) i / (float) visibleNodes.size()});
+            n++;
         }
         for (const Connector *c: node->outputs) {
             vec2 pos = c->parent->pos + c->pos;
             float state = c->state ? 1.0f : 0.0f;
-            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state});
-            i++;
+            vertices.insert(vertices.end(), {pos.x, pos.y, nodeStyle->connectorRadius, state, 1.0f - (float) i / (float) visibleNodes.size()});
+            n++;
         }
     }
     VertexArray vao;
     VertexBuffer vbo(&vertices[0], sizeof(float) * vertices.size());
     VertexBufferLayout layout;
     layout.push<float>(4); // (x,y,r,state)
+    layout.push<float>(1); // depth
     vao.addBuffer(vbo, layout);
     nodeConnectorShader.use();
     nodeConnectorShader.setMat4("projection", pmat);
     nodeConnectorShader.setMat4("view", view);
     nodeConnectorShader.setVec3("falseColor", nodeStyle->falseColor);
     nodeConnectorShader.setVec3("trueColor", nodeStyle->trueColor);
-    glDrawArrays(GL_POINTS, 0, i);
+    glDrawArrays(GL_POINTS, 0, n);
 }
 
 void NodeManager::renderLinks(const mat4 &pmat, const mat4 &view) {

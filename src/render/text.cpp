@@ -157,6 +157,14 @@ vec2 Font::getDim(const string &text, float size){
 void Font::text(const string &textString, vec2 position, float size, vec3 color) {
     Text t;
     t.fontSize = size;
+    t.position = vec3(position, 0);
+    t.textString = textString;
+    t.color = color;
+    m_texts.push_back(t);
+}
+void Font::text(const string &textString, vec3 position, float size, vec3 color) {
+    Text t;
+    t.fontSize = size;
     t.position = position;
     t.textString = textString;
     t.color = color;
@@ -309,7 +317,7 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
         float scale = txt.fontSize / m_size;
         const string &s = txt.textString;
         vec3 color = txt.color;
-        vec2 pos = txt.position; // writer head
+        vec3 pos = txt.position; // writer head
 
         float xstart = pos.x;
         for (int j = 0; j < s.length(); j++) {
@@ -333,7 +341,7 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
             // build quad for this char
             // pos
             //vec2 start = pos + (g.offset - m_padding.xy) * scale;
-            vec2 start = pos + g.offset * scale;
+            vec2 start = pos.xy + g.offset * scale;
             vec2 size = vec2(g.dim.x, g.dim.y) * scale;
 
             // uvs
@@ -343,7 +351,8 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
             // append data
             vertices.insert(vertices.end(), {start.x, start.y, size.x, size.y,
                                              uvStart.x, uvStart.y, uvSize.x, uvSize.y,
-                                             color.r, color.g, color.b});
+                                             color.r, color.g, color.b,
+                                             pos.z});
 
             // advance writer head
             pos.x += (g.advance-m_padding.x) * scale;
@@ -360,6 +369,7 @@ void Font::render(const mat4 &pmat, const mat4 &view) {
     layout.push<float>(4); // rect
     layout.push<float>(4); // rectUV
     layout.push<float>(3); // color
+    layout.push<float>(1); // depth
     vao.addBuffer(vbo, layout);
 
     glDrawArrays(GL_POINTS, 0, nbChars);

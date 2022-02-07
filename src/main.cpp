@@ -23,14 +23,14 @@ vec2 mouse = vec2(0);
 bool viewPanning = false;
 
 mat4 getViewMatrix() {
-    mat4 view = scale(identity<4>(), vec3(zoom, zoom, 0));
+    mat4 view = scale(identity<4>(), vec3(zoom, zoom, 1));
     vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
     view = translate(view, viewTranslate);
     return view;
 }
 
 mat4 getInvViewMatrix() {
-    mat4 invView = scale(identity<4>(), vec3(1.0f / zoom, 1.0f / zoom, 0));
+    mat4 invView = scale(identity<4>(), vec3(1.0f / zoom, 1.0f / zoom, 1));
     vec3 viewTranslate = vec3((1 - zoom) / 2.0f, (1 - zoom) / 2.0f, 0) + vec3(viewOffset, 0);
     invView = translate(invView, -viewTranslate / zoom);
     return invView;
@@ -47,13 +47,13 @@ int main(int argc, char const *argv[]) {
     Platform &platform = Platform::getInstance("BasicBool", 1280, 720);
 
     // Opengl Setup
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(0);
+    glDepthFunc(GL_ALWAYS);
+
     glEnable(GL_LINE_SMOOTH);
-
-    //glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_STENCIL_TEST);
-
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
     vec2 contextMenuPos;
 
 
-    /*
+
     for (int i = 0; i < 10000; i++)
     {
 
@@ -119,7 +119,7 @@ int main(int argc, char const *argv[]) {
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
     }
-     */
+
 
 
     // projection size
@@ -236,9 +236,7 @@ int main(int argc, char const *argv[]) {
         // --- Background --- //
         float bgVal = 35.0f / 255.0f;
         glClearColor(bgVal, bgVal, bgVal, 1.0);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // --- Grid --- //
         // TODO : improve this
         int nx = width / 16;
