@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
     vec2 contextMenuPos;
 
 
-
+    /*
     for (int i = 0; i < 10000; i++)
     {
 
@@ -118,7 +118,7 @@ int main(int argc, char const *argv[]) {
         NodeManager.addLink(n1n3);
         NodeManager.addNode(n3);
         NodeManager.addNode(n4);
-    }
+    }*/
 
 
 
