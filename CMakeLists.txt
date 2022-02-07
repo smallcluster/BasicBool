@@ -69,4 +69,3 @@ find_package(OpenMP REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 
 target_include_directories(${PROJECT_NAME} PUBLIC external/stb)
-

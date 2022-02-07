@@ -7,11 +7,14 @@
 #include "node/nodes.hpp"
 #include "gui/gui.hpp"
 #include <chrono>
+#include <cstdint>
+#include <ratio>
 #include <thread>
 #include <cmath>
 #include <optional>
 
 using namespace std::chrono_literals;
+
 
 // ---------------------------------------------------------------------
 
@@ -67,12 +70,11 @@ int main(int argc, char const *argv[]) {
     NodeManager NodeManager;
 
     unsigned int tickPerSec = 1;
-    auto simStartTime = std::chrono::system_clock::now();
+    auto simStartTime = std::chrono::steady_clock::now();
     auto tickTime = 1000000000ns / tickPerSec;
     bool beginUpdateDone = false;
     bool boxSelection = false;
     vec2 boxSelectionStart = vec2(0);
-
     bool unlimitedTickTime = false;
 
     vec2 orpos = vec2((float) platform.getWidth() / 2.0f, (float) platform.getHeight() / 2.0f);
@@ -95,6 +97,9 @@ int main(int argc, char const *argv[]) {
     // 0 -> action on node
     // 1 -> replace nodes
     // 2 -> add nodes
+    // 3 -> File menu
+    // 4 -> Edit menu
+    // 5 -> Help menu
     int contextMenu = -1;
     vec2 contextMenuPos;
 
@@ -120,16 +125,13 @@ int main(int argc, char const *argv[]) {
         NodeManager.addNode(n4);
     }*/
 
-
-
-    // projection size
-    double avgFps = 0;
-    unsigned long long frame = 0;
     std::optional<Node *> grabNode = {};
     std::optional<Connector *> startConnector = {};
 
     while (platform.processEvents()) {
-        auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto startTime = std::chrono::steady_clock::now();
+
         int width = platform.getWidth();
         int height = platform.getHeight();
         // update mouse pos
@@ -276,9 +278,9 @@ int main(int argc, char const *argv[]) {
             if (!beginUpdateDone) {
                 NodeManager.beginUpdate();
                 beginUpdateDone = true;
-                simStartTime = std::chrono::system_clock::now();
+                simStartTime = std::chrono::steady_clock::now();
             }
-            auto time = std::chrono::system_clock::now();
+            auto time = std::chrono::steady_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time - simStartTime);
             auto t = (float) ((double) duration.count() / (double) tickTime.count());
             if (t > 1)
@@ -306,7 +308,7 @@ int main(int argc, char const *argv[]) {
         switch (contextMenu) {
             case 0:
             {
-                std::vector<string> list = {"Remove", "Replace"};
+                static std::vector<string> list = {"Remove", "Replace"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Action menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -323,7 +325,7 @@ int main(int argc, char const *argv[]) {
             }
                 break;
             case 1:{
-                std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
+                static std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Replace nodes menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -335,7 +337,7 @@ int main(int argc, char const *argv[]) {
             }
                 break;
             case 2 : {
-                std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
+                static std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Add node menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -359,38 +361,67 @@ int main(int argc, char const *argv[]) {
                     }
                 }
             } break;
+            // File menu
+            case 3 : {
+                static std::vector<string> list = {"New", "Save", "Save As", "Exit"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"File menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                }
+            } break;
+                // Edit menu
+            case 4 : {
+                static std::vector<string> list = {"Settings", "Cut", "Copy", "Delete"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Edit menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                }
+            } break;
+            // Help menu
+            case 5 : {
+                static std::vector<string> list = {"Check for Updates", "About"};
+                int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Help menu"});
+                if (platform.isMousePressed(MouseButton::LEFT)) {
+                    contextMenu = -1;
+                }
+            } break;
+        }
+
+        static std::vector<string> fileMenu = {"File", "Edit", "Help"};
+        auto info = guiManager.fileMenu(fileMenu, pmat);
+        switch (info.first) {
+            case 0:
+                contextMenu = 3;
+                contextMenuPos = info.second;
+                break;
+            case 1:
+                contextMenu = 4;
+                contextMenuPos = info.second;
+                break;
+            case 2:
+                contextMenu = 5;
+                contextMenuPos = info.second;
+                break;
         }
 
 
 
-        // wait time
-        /*
-        auto endTime = std::chrono::high_resolution_clock::now();
-        long long elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime-startTime).count();
-        long long targetTime = 16666/2;
-        long long waitTime = targetTime - elapsedTime;
-        if(waitTime > 0){
-            std::this_thread::sleep_for(std::chrono::microseconds(waitTime));
+        // TODO : Use system clock to increase sleep resolution
+
+        auto endTime = std::chrono::steady_clock::now();
+        auto workTime = endTime-startTime;
+        auto targetTime = std::chrono::duration<uint64_t , std::ratio<1, 80>>{1}; // 80 Hz
+        if(workTime < targetTime){
+            std::this_thread::sleep_for(targetTime - workTime);
         }
-        */
-        auto finalTime = std::chrono::high_resolution_clock::now();
-        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                finalTime - startTime).count();
+
+        auto afterSleep = std::chrono::steady_clock::now();
+        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(afterSleep-startTime).count();
+
         int fps = (int) (1000000.0 / (double) finalElapsedTime);
+
         string text = std::to_string(fps);
-        font.text("fps : " + text, vec2(0), 20, vec3(1));
-
-        double currentFps = (1000000.0 / (double) finalElapsedTime);
-        if (frame > 1) {
-            avgFps = avgFps + (currentFps - avgFps) / (double) frame;
-        } else {
-            avgFps = currentFps;
-        }
-        frame++;
-
-        text = std::to_string((int) avgFps);
-        font.text("avg fps : " + text, vec2(0, 20), 20, vec3(1));
-
+        font.text("fps : " + text, vec2(0, height-font.getHeight("fps : " + text, 20)), 20, vec3(1));
         font.render(pmat);
 
         // End drawing

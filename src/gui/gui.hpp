@@ -13,6 +13,8 @@ namespace gui {
     struct Theme {
         float cornerRadius = 8.0f;
         float dropDownTextSize = 14;
+        float fileMenuTextSize = 14;
+        float fileMenuMargin = 4.0f;
         float dropDownMargin = 4.0f;
         vec3 backgoundColor = vec3(0.1f);
         vec3 textColor = vec3(1.0f);
@@ -49,6 +51,55 @@ namespace gui {
     public:
 
         GUIManager() : guiRectShader("gui_rect"){}
+
+
+        std::pair<int, vec2> fileMenu(const std::vector<string> &list, const mat4 &pmat){
+            if (list.empty())
+                return {-1,vec2(0)};
+
+            // User interaction
+            Platform &platform = Platform::getInstance();
+            vec2 mouse = vec2(platform.getMouseX(), platform.getMouseY());
+
+            // min height
+            float fileMenuHeight = 0;
+            for(const string &s : list)
+                fileMenuHeight = std::max(fileMenuHeight, theme.font.getHeight(s, theme.fileMenuTextSize)+2*theme.cornerRadius);
+
+            // draw file menu rect
+            drawRect(Rect(vec2(0),
+                          vec2(platform.getWidth(),fileMenuHeight+2*theme.fileMenuMargin),
+                          theme.backgoundColor));
+
+            int selected = -1;
+            vec2 dropDownPos = vec2(0);
+            // render each item
+            float xoffset = theme.fileMenuMargin;
+            for(int i=0; i < list.size(); i++){
+                vec2 textSize = theme.font.getDim(list[i], theme.fileMenuTextSize);
+                Rect r = Rect(vec2(xoffset,theme.fileMenuMargin),
+                              textSize+vec2(2*theme.cornerRadius),
+                              theme.dropDownColor);
+                if(Rect::pointInRect(r, mouse)){
+                    r.color = theme.dropDownHoverColor;
+                    if(platform.isMousePressed(MouseButton::LEFT)){
+                        dropDownPos = vec2(r.pos.x, fileMenuHeight+2*theme.fileMenuMargin);
+                        selected = i;
+                    }
+
+                }
+                drawRect(r);
+                theme.font.text(list[i], vec2(xoffset,theme.fileMenuMargin)+vec2(theme.cornerRadius), theme.fileMenuTextSize, vec3(1));
+                xoffset += r.size.x+theme.fileMenuMargin;
+
+            }
+
+            // render widget
+            renderRect(pmat);
+            theme.font.render(pmat);
+
+            return {selected, dropDownPos};
+        }
 
         // TODO : Improve this
         int dropDownMenu(const std::vector<string> &list, vec2 pos, const mat4 &pmat, std::optional<string> header) {

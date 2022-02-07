@@ -129,13 +129,7 @@ void NodeManager::render(const mat4 &pmat, const mat4 &view, const vec2 &camstar
     glDepthFunc(GL_EQUAL); // texts & connectors must be on the same level as their parent node.
     renderConnectors(pmat, view);
     renderText(pmat, view);
-
     glDepthFunc(GL_ALWAYS);
-
-    // TODO : remove this
-    nodeStyle->font.text("Visible nodes : " + std::to_string(visibleNodes.size()), vec2(0, 40), 20, vec3(1));
-    nodeStyle->font.text("Visible links : " + std::to_string(visibleLinks.size()), vec2(0, 60), 20, vec3(1));
-    nodeStyle->font.render(pmat);
 
     visibleNodes.clear();
     visibleLinks.clear();
