@@ -1,5 +1,5 @@
 # ![Alt text](Logo128.png?raw=true "Title") BasicBool
-![GitHub](https://img.shields.io/github/license/smallcluster/BasicBool?logo=Github) ![](https://img.shields.io/badge/platform-win--64-lightgrey)
+![GitHub](https://img.shields.io/github/license/smallcluster/BasicBool?logo=Github) ![](https://img.shields.io/badge/platform-win--64-blue)
 
 A Windows (Linux support not yet implemented) application written in C++ to visualize computing using boolean logic.
 
