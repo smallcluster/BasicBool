@@ -305,9 +305,22 @@ int main(int argc, char const *argv[]) {
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Replace nodes menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
-                    if(index >= 0){
-                        // TODO : Implement this and try to keep links
-                        //NodeManager.replaceSelected(list[index]);
+                    switch (index) {
+                        case 0:
+                            NodeManager.replaceSelected([](vec2 pos){return new TrueNode(pos);});
+                            break;
+                        case 1:
+                            NodeManager.replaceSelected([](vec2 pos){return new NotNode(pos);});
+                            break;
+                        case 2:
+                            NodeManager.replaceSelected([](vec2 pos){return new OrNode(pos);});
+                            break;
+                        case 3:
+                            NodeManager.replaceSelected([](vec2 pos){return new AndNode(pos);});
+                            break;
+                        case 4:
+                            NodeManager.replaceSelected([](vec2 pos){return new XorNode(pos);});
+                            break;
                     }
                 }
             }

@@ -225,6 +225,37 @@ std::optional<Connector *> NodeManager::getConnectorAt(vec2 mouse) {
     return {};
 }
 
+void NodeManager::replaceSelected(std::function<Node*(vec2)> build){
+    for(Node* node : selectedNodes)
+        replaceNode(node, build);
+}
+
+void NodeManager::replaceNode(Node* node, std::function<Node*(vec2)> build){
+    Node* rnode = build(node->pos);
+    // ---- Inputs ----
+    for(int i=0; i < node->inputs.size() && i < rnode->inputs.size(); i++){
+        Connector* c = node->inputs[i];
+        // copy links
+        for(Link* l : c->links){
+            Link* nl = new Link(l->input, rnode->inputs[i]);
+            addLink(nl);
+            nl->nextState = l->nextState;
+        }
+    }
+    // ---- Outputs ----
+    for(int i=0; i < node->outputs.size() && i <  rnode->outputs.size(); i++){
+        Connector* c = node->outputs[i];
+        // copy links
+        for(Link* l : c->links){
+            Link* nl = new Link(rnode->outputs[i], l->output);
+            addLink(nl);
+        }
+    }
+    removeNode(node);
+    addNode(rnode);
+}
+
+
 void NodeManager::moveSelectedNodes(vec2 offset) {
     for (Node *node: selectedNodes) {
         node->pos = node->pos + offset;

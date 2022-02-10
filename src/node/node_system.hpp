@@ -121,6 +121,9 @@ public:
 
     void removeSelected();
 
+    void replaceNode(Node* node, std::function<Node*(vec2)> build);
+    void replaceSelected(std::function<Node*(vec2)> build);
+
 
 private:
     std::vector<Node *> selectedNodes;
