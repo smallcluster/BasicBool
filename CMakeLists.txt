@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXE_LINKER_FLAGS -static)
 
+# set output directories for all builds (Debug, Release, etc.)
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_SOURCE_DIR} )
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
+
 add_executable(
         ${PROJECT_NAME}
         src/main.cpp
@@ -42,13 +48,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC src/)
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} --my-debug-flags")
 target_compile_definitions(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Debug>:BUILD_DEBUG>")
 
-
-# Output dir
-set_target_properties(
-        ${PROJECT_NAME}
-        PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-)
 
 # --- DEPS ---
 
