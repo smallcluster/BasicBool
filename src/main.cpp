@@ -75,6 +75,7 @@ int main(int argc, char const *argv[]) {
     bool boxSelection = false;
     vec2 boxSelectionStart = vec2(0);
     bool unlimitedTickTime = false;
+    int fps = 60;
 
     vec2 orpos = vec2((float) platform.getWidth() / 2.0f, (float) platform.getHeight() / 2.0f);
 
@@ -92,6 +93,7 @@ int main(int argc, char const *argv[]) {
 
     // GUI
     gui::GUIManager guiManager;
+    
 
     // 0 -> action on node
     // 1 -> replace nodes
@@ -101,29 +103,6 @@ int main(int argc, char const *argv[]) {
     // 5 -> Help menu
     int contextMenu = -1;
     vec2 contextMenuPos;
-
-
-    /*
-    for (int i = 0; i < 10000; i++)
-    {
-
-        Node *n1 = new TrueNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Node *n2 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Link *n1n2 = new Link(n1->getOutput("out"), n2->getInput("in"));
-        NodeManager.addLink(n1n2);
-        NodeManager.addNode(n1);
-        NodeManager.addNode(n2);
-
-        Node *n3 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Node *n4 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
-        Link *n3n4 = new Link(n3->getOutput("out"), n4->getInput("in"));
-        Link *n1n3 = new Link(n1->getOutput("out"), n3->getInput("in"));
-        NodeManager.addLink(n3n4);
-        NodeManager.addLink(n1n3);
-        NodeManager.addNode(n3);
-        NodeManager.addNode(n4);
-    }*/
-
     std::optional<Node *> grabNode = {};
     std::optional<Connector *> startConnector = {};
 
@@ -326,7 +305,7 @@ int main(int argc, char const *argv[]) {
             }
                 break;
             case 2 : {
-                static std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR"};
+                static std::vector<string> list = {"TRUE", "NOT", "OR", "AND", "XOR", "PERFORMANCE TEST (40k)"};
                 int index = guiManager.dropDownMenu(list, contextMenuPos, pmat, {"Add node menu"});
                 if (platform.isMousePressed(MouseButton::LEFT)) {
                     contextMenu = -1;
@@ -346,6 +325,27 @@ int main(int argc, char const *argv[]) {
                             break;
                         case 4:
                             NodeManager.addNode(new XorNode(pos));
+                            break;
+                        case 5:
+                            for (int i = 0; i < 10000; i++)
+                            {
+
+                                Node *n1 = new TrueNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+                                Node *n2 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+                                Link *n1n2 = new Link(n1->getOutput("out"), n2->getInput("in"));
+                                NodeManager.addLink(n1n2);
+                                NodeManager.addNode(n1);
+                                NodeManager.addNode(n2);
+
+                                Node *n3 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+                                Node *n4 = new NotNode(25.0f * vec2(std::rand() % platform.getWidth(), std::rand() % platform.getHeight()));
+                                Link *n3n4 = new Link(n3->getOutput("out"), n4->getInput("in"));
+                                Link *n1n3 = new Link(n1->getOutput("out"), n3->getInput("in"));
+                                NodeManager.addLink(n3n4);
+                                NodeManager.addLink(n1n3);
+                                NodeManager.addNode(n3);
+                                NodeManager.addNode(n4);
+                            }
                             break;
                     }
                 }
@@ -426,16 +426,17 @@ int main(int argc, char const *argv[]) {
             }
         }
 
-        // FPS info
-        auto afterSleep = std::chrono::steady_clock::now();
-        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(afterSleep-startTime).count();
-        int fps = (int) (1000000.0 / (double) finalElapsedTime);
         string text = std::to_string(fps);
         font.text("fps : " + text, vec2(0, height-font.getHeight("fps : " + text, 20)), 20, vec3(1));
         font.render(pmat);
 
         // End drawing
         platform.swapBuffers();
+
+        // FPS info
+        auto afterSleep = std::chrono::steady_clock::now();
+        long long finalElapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(afterSleep-startTime).count();
+        fps = (int) (1000000.0 / (double) finalElapsedTime);
     }
     return 0;
 }
