@@ -130,7 +130,7 @@ namespace gui {
 
 
             for (int i = startIndex; i < list.size(); i++) {
-                Rect textRect = Rect(pos + offset, theme.font.getDim(list[0], theme.dropDownTextSize)+vec2(2*theme.cornerRadius));
+                Rect textRect = Rect(pos + offset, theme.font.getDim(list[i], theme.dropDownTextSize)+vec2(2*theme.cornerRadius));
                 minAABB = Rect::findMinAABB(minAABB, textRect);
                 offset.y += textRect.size.y + theme.dropDownMargin;
             }
